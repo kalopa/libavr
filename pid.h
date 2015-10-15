@@ -42,3 +42,5 @@ struct	pid	{
 	short	u_mul;
 	short	u_div;
 };
+
+short	pidcalc(struct pid *, short);
