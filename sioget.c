@@ -36,6 +36,15 @@ uchar_t			iring[32];
 uchar_t			echof = 0;
 
 /*
+ * Check if the input queue is empty.
+ */
+int
+sio_iqueue_empty()
+{
+	return(ihead == itail);
+}
+
+/*
  * Add a character the outbound ring buffer.
  */
 int

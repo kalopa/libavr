@@ -36,6 +36,15 @@ volatile uchar_t	otail;
 uchar_t			oring[32];
 
 /*
+ * Check if the input queue is empty.
+ */
+int
+sio_oqueue_full()
+{
+	return(ohead == otail);
+}
+
+/*
  * Add a character the outbound ring buffer.
  */
 void
