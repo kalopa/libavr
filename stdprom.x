@@ -49,8 +49,7 @@ OUTPUT_FORMAT("elf32-avr","elf32-avr","elf32-avr")
 OUTPUT_ARCH(avr:2)
 MEMORY
 {
-  text   (rx)   : ORIGIN = 0, LENGTH = 7680
-  bstrap (rx)   : ORIGIN = 0x1e00, LENGTH = 512
+  text   (rx)   : ORIGIN = 0, LENGTH = 8192
   data   (rw!x) : ORIGIN = 0x800060, LENGTH = 0xffa0
   eeprom (rw!x) : ORIGIN = 0x810000, LENGTH = 64K
 }
@@ -190,6 +189,7 @@ SECTIONS
     KEEP (*(.fini0))
      _etext = . ;
   }  > text
+  /*
   .bstrap :
   {
      __bstrap_start = . ;
@@ -197,6 +197,7 @@ SECTIONS
      KEEP (*(.bstrap0))
      __bstrap_end = . ;
   } > bstrap
+  */
   .data	  : AT (ADDR (.text) + SIZEOF (.text))
   {
      PROVIDE (__data_start = .) ;
