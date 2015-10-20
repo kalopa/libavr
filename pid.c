@@ -39,13 +39,14 @@
 short
 pidcalc(struct pid *pp, short e)
 {
-	short u, delta;
+	short bige, u, bigu, delta;
 
-	e = ((e * pp->e_mul) / pp->e_div);
-	delta = e - pp->e_prev;
-	pp->e_prev = e;
-	pp->e_sigma += e;
-
-	u = pp->kp * e + pp->ki * pp->e_sigma + pp->kd * delta;
-	return((u * pp->u_mul) / pp->u_div);
+	bige = ((e * pp->e_mul) / pp->e_div);
+	delta = bige - pp->e_prev;
+	pp->e_prev = bige;
+	pp->e_sigma += bige;
+	bigu = pp->kp * bige + pp->ki * pp->e_sigma + pp->kd * delta;
+	u = (bigu * pp->u_mul) / pp->u_div;
+	printf("PID:%d.%d.%d.%d.%d.%d\n", e, bige, delta, pp->e_sigma, bigu, u);
+	return(u);
 }
