@@ -39,13 +39,19 @@
 short
 pidcalc(struct pid *pp, short e)
 {
-	short bige, u, bigu, delta;
+	short bige, u, bigu, delta, awu;
 
-	bige = ((e * pp->e_mul) / pp->e_div);
+	bige = (e * pp->e_mul) / pp->e_div;
 	delta = bige - pp->e_prev;
 	pp->e_prev = bige;
-	pp->e_sigma += bige;
-	bigu = pp->kp * bige + pp->ki * pp->e_sigma + pp->kd * delta;
+	awu = pp->e_sigma * pp->ki;
+	if (awu < 5000 && awu > -5000) {
+		/*
+		 * Anti-windup mechanism
+		 */
+		pp->e_sigma += bige;
+	}
+	bigu = pp->kp * bige + awu + pp->kd * delta;
 	u = (bigu * pp->u_mul) / pp->u_div;
 	printf("PID:%d.%d.%d.%d.%d.%d\n", e, bige, delta, pp->e_sigma, bigu, u);
 	return(u);
