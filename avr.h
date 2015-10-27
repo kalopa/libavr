@@ -37,6 +37,15 @@
 #define cli()  __asm__ __volatile__ ("cli" ::)
 
 /*
+ * Linked list for timer callbacks.
+ */
+struct thread {
+	struct thread	*next;
+	unsigned int	tick;
+	unsigned int	(*func)();
+};
+
+/*
  * Some useful typedefs...
  */
 typedef unsigned char	uchar_t;
@@ -56,6 +65,10 @@ int		sio_oqueue_full();
 int		analog_read(int);
 int		eeprom_rdword(int);
 void		eeprom_wrword(int, int);
+
+int		timer_callback(unsigned int (*)(), int);
+void		timer_enqueue(struct thread *);
+void		timer_loop();
 
 void		_reset();
 void		_sleep();

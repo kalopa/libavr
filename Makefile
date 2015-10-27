@@ -63,7 +63,7 @@ ASRCS=	reset.s \
 	anastart.s anaread.s \
 	setled.s \
 	bootstrap.s
-CSRCS=	sioget.c sioput.c analog.c eeprom.c pid.c
+CSRCS=	event.c sioget.c sioput.c analog.c eeprom.c pid.c
 OBJS=	$(ASRCS:.s=.o) $(CSRCS:.c=.o)
 LIB=	libavr.a
 
