@@ -32,6 +32,7 @@
 #include "avr.h"
 #include "ioregs.h"
 
+volatile uchar_t thread_tick = 0;
 struct	thread	*thead = NULL;
 
 /*
@@ -84,13 +85,12 @@ void
 timer_loop()
 {
 	struct thread *tp;
-	volatile uchar_t tick;
 
 	while (1) {
 		_watchdog();
-		if (tick == 0)
+		if (thread_tick == 0)
 			continue;
-		tick = 0;
+		thread_tick = 0;
 		if (thead != NULL && --thead->tick == 0) {
 			while ((tp = thead) != NULL && tp->tick == 0) {
 				thead = tp->next;
@@ -101,4 +101,14 @@ timer_loop()
 			}
 		}
 	}
+}
+
+/*
+ * Ping the timer loop - time has moved on. Called from the Interrupt
+ * Service Routine.
+ */
+void
+timer_fire()
+{
+	thread_tick = 1;
 }
