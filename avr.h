@@ -69,7 +69,7 @@ void		eeprom_wrword(int, int);
 int		timer_callback(unsigned int (*)(), int);
 void		timer_enqueue(struct thread *);
 void		timer_loop();
-void		timer_fire();
+void		timer_tick();
 
 void		_reset();
 void		_sleep();

@@ -32,8 +32,8 @@
 #include "avr.h"
 #include "ioregs.h"
 
-volatile uchar_t thread_tick = 0;
-struct	thread	*thead = NULL;
+volatile uchar_t	tick_count = 0;
+struct	thread		*thead = NULL;
 
 /*
  * Register a timer callback.
@@ -79,36 +79,36 @@ timer_enqueue(struct thread *tp)
 }
 
 /*
- * Loop through the timer list, waiting for a tick.
+ * Loop through the timer list, dealing with each timer tick.
  */
 void
 timer_loop()
 {
 	struct thread *tp;
 
-	while (1) {
-		_watchdog();
-		if (thread_tick == 0)
-			continue;
-		thread_tick = 0;
-		if (thead != NULL && --thead->tick == 0) {
-			while ((tp = thead) != NULL && tp->tick == 0) {
-				thead = tp->next;
-				if ((tp->tick = tp->func()) > 0)
-					timer_enqueue(tp);
-				else
-					free((char *)tp);
-			}
+	/*
+	 * Only run the linked-list if the timer has fired.
+	 */
+	for (; tick_count > 0; tick_count--) {
+		if (thead != NULL && thead->tick > 0)
+			thead->tick--;
+		while ((tp = thead) != NULL && tp->tick == 0) {
+			thead = tp->next;
+			if ((tp->tick = tp->func()) > 0)
+				timer_enqueue(tp);
+			else
+				free((char *)tp);
 		}
 	}
 }
 
 /*
  * Ping the timer loop - time has moved on. Called from the Interrupt
- * Service Routine.
+ * Service Routine.  Generally a tick happens every 5ms, which is the
+ * unit of measure for the event queue.
  */
 void
-timer_fire()
+timer_tick()
 {
-	thread_tick = 1;
+	tick_count++;
 }
