@@ -28,7 +28,7 @@
  */
 #include <stdio.h>
 
-#include "avr.h"
+#include "libavr.h"
 
 volatile uchar_t	ihead;
 uchar_t			itail;

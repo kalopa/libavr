@@ -75,4 +75,4 @@ clean:
 $(LIB): $(OBJS)
 	$(AR) cru $(LIB) $?
 
-$(OBJS): $(IOREGS) $(REGVALS) avr.h ioregs.h
+$(OBJS): $(REGVALS) libavr.h

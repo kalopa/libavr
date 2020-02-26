@@ -29,7 +29,7 @@
  */
 #include <stdio.h>
 
-#include "avr.h"
+#include "libavr.h"
 #include "pid.h"
 
 /*

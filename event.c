@@ -29,8 +29,9 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include "avr.h"
-#include "ioregs.h"
+#include <avr/io.h>
+
+#include "libavr.h"
 
 volatile uchar_t	tick_count = 0;
 struct	thread		*thead = NULL;

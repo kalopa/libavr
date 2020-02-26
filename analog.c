@@ -28,8 +28,9 @@
  * Run an analog conversion and return the result.
  */
 #include <stdio.h>
-#include "avr.h"
-#include "ioregs.h"
+#include <avr/io.h>
+
+#include "libavr.h"
 
 /*
  *
@@ -37,6 +38,6 @@
 int
 analog_read(int portno)
 {
-	_ana_start((portno & 0x0f) | ADMUX_REFS1 | ADMUX_REFS0);
+	_ana_start((portno & 0x0f) | (1<<REFS1) | (1<<REFS0));
 	return(_ana_read());
 }

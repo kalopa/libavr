@@ -27,9 +27,9 @@
  * ABSTRACT
  */
 #include <stdio.h>
+#include <avr/io.h>
 
-#include "avr.h"
-#include "ioregs.h"
+#include "libavr.h"
 
 /*
  *
@@ -38,13 +38,10 @@ void
 usart_init(uchar_t brcode)
 {
 	/*
-	 * Set baud rate.
+	 * Set baud rate, and configure the USART.
 	 */
-	*(uchar_t *)UCSRC = 0;
-	*(uchar_t *)UBRRL = brcode;
-	/*
-	 * Configure the USART.
-	 */
-	*(uchar_t *)UCSRB = (UCSRB_RXEN|UCSRB_TXEN);
-	*(uchar_t *)UCSRC = (UCSRC_URSEL|UCSRC_UCSZ1|UCSRC_UCSZ0);
+	UBRRH = (brcode >> 8) & 0xf;
+	UBRRL = (brcode & 0xff);
+	UCSRB = (1<<RXEN)|(1<<TXEN);
+	UCSRC = (1<<URSEL)|(1<<UCSZ1)|(1<<UCSZ0);
 }

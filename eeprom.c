@@ -27,7 +27,8 @@
  * ABSTRACT
  */
 #include <stdio.h>
-#include "avr.h"
+
+#include "libavr.h"
 
 /*
  *

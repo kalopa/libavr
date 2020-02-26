@@ -29,7 +29,7 @@
  */
 #include <stdio.h>
 
-#include "avr.h"
+#include "libavr.h"
 
 uchar_t			ohead;
 volatile uchar_t	otail;
