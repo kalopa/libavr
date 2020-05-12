@@ -26,7 +26,7 @@
 ;
 ; ABSTRACT
 ;
-.include "regvals.inc"
+.include "atmega8.inc"
 ;
 ; uchar_t _rdeeprom(uint_t);
 ;

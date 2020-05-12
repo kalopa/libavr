@@ -63,7 +63,7 @@
 ; r17		state
 ; r18,r19:	aptr
 ;
-.include "regvals.inc"
+.include "atmega8.inc"
 ;
 ; Life begins here...
 ;

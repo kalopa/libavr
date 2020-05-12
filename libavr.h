@@ -33,8 +33,10 @@
 /*
  * Some inline assembly functions...
  */
+#ifndef sei
 #define sei()  __asm__ __volatile__ ("sei" ::)
 #define cli()  __asm__ __volatile__ ("cli" ::)
+#endif
 
 /*
  * Linked list for timer callbacks.

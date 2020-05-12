@@ -25,7 +25,7 @@
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;
 ; ABSTRACT
-.include "regvals.inc"
+.include "atmega8.inc"
 ;
 ; void _setled(uchar_t);
 ;
