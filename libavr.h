@@ -39,31 +39,6 @@
 #endif
 
 /*
- * This structure is used to maintain the specific parameters for
- * a PID controller.
- */
-struct	pid	{
-	short	kp;
-	short	ki;
-	short	kd;
-	short	e_mul;
-	short	e_div;
-	short	e_sigma;
-	short	e_prev;
-	short	u_mul;
-	short	u_div;
-};
-
-/*
- * Linked list for timer callbacks.
- */
-struct thread {
-	struct thread	*next;
-	unsigned int	tick;
-	unsigned int	(*func)();
-};
-
-/*
  * Some useful typedefs...
  */
 typedef unsigned char	uchar_t;
@@ -71,37 +46,61 @@ typedef unsigned int	uint_t;
 typedef unsigned long	ulong_t;
 
 /*
+ * This structure is used to maintain the specific parameters for
+ * a PID controller.
+ */
+struct	pid	{
+	int			kp;
+	int			ki;
+	int			kd;
+	uint_t		k_div;
+	int			e_sigma;
+	int			e_prev;
+	uint_t		u_mul;
+	uint_t		u_div;
+};
+
+/*
+ * Linked list for timer callbacks.
+ */
+struct thread {
+	struct thread	*next;
+	uint_t			tick;
+	uint_t			(*func)();
+};
+
+/*
  * Prototypes for functions in libavr.a
  */
 int		sio_getc(FILE *);
 int		sio_putc(char, FILE *);
-void		sio_setecho(int);
+void	sio_setecho(int);
 int		sio_dequeue(char);
-void		sio_enqueue(char, char);
+void	sio_enqueue(char, char);
 int		sio_iqueue_empty();
 int		sio_oqueue_full();
 int		analog_read(int);
 int		eeprom_rdword(int);
-void		eeprom_wrword(int, int);
+void	eeprom_wrword(int, int);
 
-short	pidcalc(struct pid *, short);
+int		pidcalc(struct pid *, int);
 
 int		timer_callback(unsigned int (*)(), int);
-void		timer_enqueue(struct thread *);
-void		timer_loop();
-void		timer_tick();
+void	timer_enqueue(struct thread *);
+void	timer_loop();
+void	timer_tick();
 
-void		_reset();
-void		_sleep();
-void		_watchdog();
-void		_wdenable();
-uchar_t		_rdeeprom(uint_t);
-void		_wreeprom(uint_t, uchar_t);
-void		_setled(uchar_t);
-void		_bootstrap();
-void		_sio_rxinton();
-void		_sio_rxintoff();
-void		_sio_txinton();
-void		_sio_txintoff();
-void		_ana_start(uchar_t);
-uint_t		_ana_read();
+void	_reset();
+void	_sleep();
+void	_watchdog();
+void	_wdenable();
+uchar_t	_rdeeprom(uint_t);
+void	_wreeprom(uint_t, uchar_t);
+void	_setled(uchar_t);
+void	_bootstrap();
+void	_sio_rxinton();
+void	_sio_rxintoff();
+void	_sio_txinton();
+void	_sio_txintoff();
+void	_ana_start(uchar_t);
+uint_t	_ana_read();

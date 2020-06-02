@@ -35,12 +35,12 @@
  * Calculate the U value for a specific PID controller given a
  * particular E value.
  */
-short
-pidcalc(struct pid *pp, short e)
+int
+pidcalc(struct pid *pp, int e)
 {
-	short bige, u, bigu, delta, awu;
+	int bige, u, bigu, delta, awu;
 
-	bige = (e * pp->e_mul) / pp->e_div;
+	bige = e * pp->k_div;
 	delta = bige - pp->e_prev;
 	pp->e_prev = bige;
 	awu = pp->e_sigma * pp->ki;
