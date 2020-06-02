@@ -52,6 +52,5 @@ pidcalc(struct pid *pp, int e)
 	}
 	bigu = pp->kp * bige + awu + pp->kd * delta;
 	u = (bigu * pp->u_mul) / pp->u_div;
-	printf("PID:%d.%d.%d.%d.%d.%d\n", e, bige, delta, pp->e_sigma, bigu, u);
 	return(u);
 }
