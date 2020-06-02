@@ -30,7 +30,6 @@
 #include <stdio.h>
 
 #include "libavr.h"
-#include "pid.h"
 
 /*
  * Calculate the U value for a specific PID controller given a

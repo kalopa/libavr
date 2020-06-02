@@ -39,6 +39,22 @@
 #endif
 
 /*
+ * This structure is used to maintain the specific parameters for
+ * a PID controller.
+ */
+struct	pid	{
+	short	kp;
+	short	ki;
+	short	kd;
+	short	e_mul;
+	short	e_div;
+	short	e_sigma;
+	short	e_prev;
+	short	u_mul;
+	short	u_div;
+};
+
+/*
  * Linked list for timer callbacks.
  */
 struct thread {
@@ -67,6 +83,8 @@ int		sio_oqueue_full();
 int		analog_read(int);
 int		eeprom_rdword(int);
 void		eeprom_wrword(int, int);
+
+short	pidcalc(struct pid *, short);
 
 int		timer_callback(unsigned int (*)(), int);
 void		timer_enqueue(struct thread *);
