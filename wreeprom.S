@@ -26,26 +26,26 @@
 ;
 ; ABSTRACT
 ;
-.include "atmega8.inc"
+.include "atmega328p.inc"
 ;
-; uchar_t _rdeeprom(uint_t);
+; void _wreeprom(uint_t, uchar_t);
 ;
-; Get the current value from the specified EEPROM location
-	.global	_rdeeprom
-	.func	_rdeeprom
-_rdeeprom:
-	in	r22,SREG			; Disable interrupts
+; Write the specified value to the specified EEPROM location
+	.global	_wreeprom
+	.func	_wreeprom
+_wreeprom:
+	in	r23,SREG			; Disable interrupts
 	cli
-rde1:	sbic	EECR,1				; Are we still writing???
-	rjmp	rde1				; Yeah, try again
+wre1:	sbic	EECR,1				; Are we still writing?
+	rjmp	wre1				; Yeah, try again
 
 	out	EEARH,r25			; Set up the address
 	out	EEARL,r24
-	sbi	EECR,0				; Enable the EEPROM read
-	in	r24,EEDR			; Read the byte
+	out	EEDR,r22			; Set up the data
+	sbi	EECR,2				; Enable the WRITE circuit
+	sbi	EECR,1
 
-	out	SREG,r22			; Restore interrupts
-	clr	r25				; No high byte
+	out	SREG,r23			; Restore interrupts
 	ret
 	.endfunc
 ;

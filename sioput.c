@@ -59,11 +59,13 @@ sio_enqueue(char ch, char blockf)
 	do {
 		tail = otail;
 	} while (head == tail && blockf);
+	cli();
 	if (head != tail) {
 		oring[ohead] = ch;
 		ohead = (ohead + 1) & 31;
 	}
 	_sio_txinton();
+	sei();
 }
 
 /*

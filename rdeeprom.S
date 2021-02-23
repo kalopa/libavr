@@ -25,22 +25,28 @@
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;
 ; ABSTRACT
-; Start an Analog to Digital conversion.
 ;
-.include "atmega8.inc"
+;.include DEVICE.inc
 ;
-; void _ana_start(uchar_t);
+; uchar_t _rdeeprom(uint_t);
 ;
-; Set interrupts to specified value.
-	.global	_ana_start
-	.func	_ana_start
-_ana_start:
-	out	ADMUX,r24			; Set the multiplexors
-	nop					; Breathe
-	nop
-	ldi	r24,0xd3			; ADEN, ADSC, ADPS=/128
-	out	ADCSR,r24
+; Get the current value from the specified EEPROM location
+	.global	_rdeeprom
+	.func	_rdeeprom
+_rdeeprom:
+	in	r22,SREG			; Disable interrupts
+	cli
+rde1:	sbic	EECR,1				; Are we still writing???
+	rjmp	rde1				; Yeah, try again
+
+	out	EEARH,r25			; Set up the address
+	out	EEARL,r24
+	sbi	EECR,0				; Enable the EEPROM read
+	in	r24,EEDR			; Read the byte
+
+	out	SREG,r22			; Restore interrupts
+	clr	r25				; No high byte
 	ret
 	.endfunc
 ;
-; Fin.
+; Fin

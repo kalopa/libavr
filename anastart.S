@@ -25,28 +25,22 @@
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;
 ; ABSTRACT
+; Start an Analog to Digital conversion.
 ;
 .include "atmega8.inc"
 ;
-; void _wreeprom(uint_t, uchar_t);
+; void _ana_start(uchar_t);
 ;
-; Write the specified value to the specified EEPROM location
-	.global	_wreeprom
-	.func	_wreeprom
-_wreeprom:
-	in	r23,SREG			; Disable interrupts
-	cli
-wre1:	sbic	EECR,1				; Are we still writing?
-	rjmp	wre1				; Yeah, try again
-
-	out	EEARH,r25			; Set up the address
-	out	EEARL,r24
-	out	EEDR,r22			; Set up the data
-	sbi	EECR,2				; Enable the WRITE circuit
-	sbi	EECR,1
-
-	out	SREG,r23			; Restore interrupts
+; Set interrupts to specified value.
+	.global	_ana_start
+	.func	_ana_start
+_ana_start:
+	sts	ADMUX,r24			; Set the multiplexors
+	nop					; Breathe
+	nop
+	ldi	r24,0xd3			; ADEN, ADSC, ADPS=/128
+	out	ADCSR,r24
 	ret
 	.endfunc
 ;
-; Fin
+; Fin.

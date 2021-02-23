@@ -71,7 +71,6 @@
 ;
 ; To begin, initialize the stack frame, then start pulling bytes
 ; from the serial port.
-	.arch	atmega8
 	.text
 	.section .bstrap0,"ax",@progbits
 	.global	_bootstrap

@@ -38,7 +38,7 @@ else
 endif
 endif
 
-DEVICE?=atmega8
+DEVICE?=atmega328p
 PROG?=usbtiny
 
 AR=$(BINDIR)/avr-ar
@@ -51,21 +51,21 @@ OBJDUMP=$(BINDIR)/avr-objdump
 RANLIB=$(BINDIR)/avr-ranlib
 STRIP=$(BINDIR)/avr-strip
 
-ASFLAGS= -mmcu=$(DEVICE)
-CFLAGS=	-Wall -O2 -mmcu=$(DEVICE)
+ASFLAGS= -mmcu=$(DEVICE) -DDEVICE=$(DEVICE)
+CFLAGS=	-Wall -O2 -mmcu=$(DEVICE) -DDEVICE=$(DEVICE)
 LDFLAGS=-nostartfiles -L.
 LIBS=	-lavr
 
-ASRCS=	reset.s \
-	clkint.s watchdog.s sleep.s \
-	rdeeprom.s wreeprom.s \
-	serinten.s sioint.s pktint.s \
-	anastart.s anaread.s \
-	setled.s \
-	bootstrap.s
+ASRCS=	reset.S \
+	clkint.S watchdog.S sleep.S \
+	rdeeprom.S wreeprom.S \
+	serinten.S sioint.S pktint.S \
+	anastart.S anaread.S \
+	setled.S \
+	bootstrap.S
 CSRCS=	event.c sioget.c sioput.c analog.c eeprom.c pid.c
-OBJS=	$(ASRCS:.s=.o) $(CSRCS:.c=.o)
-LIB=	libavr.a
+OBJS=	$(ASRCS:.S=.o) $(CSRCS:.c=.o)
+LIB=	libavr.$(DEVICE).a
 
 all:	$(LIB)
 

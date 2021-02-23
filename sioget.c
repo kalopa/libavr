@@ -58,12 +58,14 @@ sio_dequeue(char blockf)
 	do {
 		head = ihead;
 	} while (head == itail && blockf);
+	cli();
 	if (head == itail)
 		ch = 0;
 	else {
 		ch = iring[itail];
 		itail = (itail + 1) & 31;
 	}
+	sei();
 	return(ch);
 }
 
