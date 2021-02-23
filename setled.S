@@ -25,7 +25,7 @@
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;
 ; ABSTRACT
-.include "atmega8.inc"
+.include "macros.inc"
 ;
 ; void _setled(uchar_t);
 ;

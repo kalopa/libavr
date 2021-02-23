@@ -28,7 +28,7 @@
 ; Wait for the conversion to complete and read the result of an A
 ; to D conversion.
 ;
-.include "atmega8.inc"
+.include "macros.inc"
 ;
 ; uint_t _ana_read();
 ;

@@ -27,7 +27,7 @@
 ; ABSTRACT
 ; Start an Analog to Digital conversion.
 ;
-.include "atmega8.inc"
+.include "macros.inc"
 ;
 ; void _ana_start(uchar_t);
 ;

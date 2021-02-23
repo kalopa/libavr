@@ -39,7 +39,7 @@
 ; P1: Payload byte 1
 ; P2: Payload byte 2
 ;
-.include "atmega8.inc"
+.include "macros.inc"
 ;
 ; void _pkt_in();
 ;

@@ -26,7 +26,7 @@
 ;
 ; ABSTRACT
 ;
-.include "atmega8.inc"
+.include "macros.inc"
 ;
 ; void _reset();
 ;

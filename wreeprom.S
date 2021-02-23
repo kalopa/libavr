@@ -26,7 +26,7 @@
 ;
 ; ABSTRACT
 ;
-.include "atmega328p.inc"
+.include "macros.inc"
 ;
 ; void _wreeprom(uint_t, uchar_t);
 ;

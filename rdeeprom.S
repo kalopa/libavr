@@ -26,7 +26,7 @@
 ;
 ; ABSTRACT
 ;
-;.include DEVICE.inc
+.include "macros.inc"
 ;
 ; uchar_t _rdeeprom(uint_t);
 ;

@@ -63,7 +63,7 @@
 ; r17		state
 ; r18,r19:	aptr
 ;
-.include "atmega8.inc"
+.include "macros.inc"
 ;
 ; Life begins here...
 ;
