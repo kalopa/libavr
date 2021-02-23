@@ -30,8 +30,8 @@
 
 #include "libavr.h"
 
-volatile uchar_t	ihead;
-uchar_t			itail;
+volatile uchar_t	ihead = 0;
+uchar_t			itail = 0;
 uchar_t			iring[32];
 uchar_t			echof = 0;
 

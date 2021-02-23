@@ -78,7 +78,7 @@ void	sio_setecho(int);
 int		sio_dequeue(char);
 void	sio_enqueue(char, char);
 int		sio_iqueue_empty();
-int		sio_oqueue_full();
+int		sio_oqueue_empty();
 int		analog_read(int);
 int		eeprom_rdword(int);
 void	eeprom_wrword(int, int);

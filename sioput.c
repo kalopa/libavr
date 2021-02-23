@@ -31,15 +31,15 @@
 
 #include "libavr.h"
 
-uchar_t			ohead;
-volatile uchar_t	otail;
+uchar_t			ohead = 0;
+volatile uchar_t	otail = 0;
 uchar_t			oring[32];
 
 /*
- * Check if the input queue is empty.
+ * Check if the output queue is empty.
  */
 int
-sio_oqueue_full()
+sio_oqueue_empty()
 {
 	return(ohead == otail);
 }
