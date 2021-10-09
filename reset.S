@@ -29,42 +29,42 @@
 	.global	_reset
 	.func	_reset
 _reset:
-	.section .init2,"ax",@progbits
 	cli
-	clr	r1
-	out	SREG,r1
-	ldi	r16,hi8(RAMEND)			; Set up the stack pointer
-	out	SPH,r16
-	ldi	r16,lo8(RAMEND)
-	out	SPL,r16
-	rcall	_ioinit				; Set up the I/O ports
+	clr		r1
+	out		SREG,r1
+	ldi		r16,lo8(RAMEND)				; Set up the stack pointer
+	ldi		r17,hi8(RAMEND)
+	out		SPH,r17
+	out		SPL,r16
+	call	_ioinit						; Set up the I/O ports
 ;
 ; Initialize BSS and data memory.
-	ldi	r17,hi8(__data_end)		; End of data block
-	ldi	r26,lo8(__data_start)		; X = start od data
-	ldi	r27,hi8(__data_start)
-	ldi	r30,lo8(__data_load_start)	; Z = program memory
-	ldi	r31,hi8(__data_load_start)
+	ldi		r17,hi8(__data_end)			; End of data block
+	ldi		r26,lo8(__data_start)		; X = start od data
+	ldi		r27,hi8(__data_start)
+	ldi		r30,lo8(__data_load_start)	; Z = program memory
+	ldi		r31,hi8(__data_load_start)
 	rjmp	bssl2
+bssl1:
+	lpm									; Fetch a byte from prog mem
+	adiw	r30,1						; Increment Z
+	st		x+,r0						; Save in [X]
+bssl2:
+	cpi		r26,lo8(__data_end)			; We done yet?
+	cpc		r27,r17
+	brne	bssl1						; No, copy some more
 
-bssl1:	lpm					; Fetch a byte from prog mem
-	adiw	r30,1				; Increment Z
-	st	x+,r0				; Save in [X]
-bssl2:	cpi	r26,lo8(__data_end)		; We done yet?
-	cpc	r27,r17
-	brne	bssl1				; No, copy some more
-
-	clr	r1				; Fill with zero
-	ldi	r17,hi8(__bss_end)		; Point to end of memory
+	ldi		r17,hi8(__bss_end)			; Point to end of memory
 	rjmp	bssl4
-
-bssl3:	st	x+,r1				; Clear memory
-bssl4:	cpi	r26,lo8(__bss_end)		; We done yet
-	cpc	r27,r17
-	brne	bssl3				; No, keep trucking
+bssl3:
+	st		x+,r1						; Clear memory
+bssl4:
+	cpi		r26,lo8(__bss_end)			; We done yet?
+	cpc		r27,r17
+	brne	bssl3						; No, keep trucking
 ;
-; We're ready for prime time!  Turn on interrupts and call the C code.
-	rcall	main				; Call the main routine
+; We're ready for prime time - call the C code.
+	call	main						; Call the main routine
 	rjmp	_reset
 	.endfunc
 ;

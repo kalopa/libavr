@@ -23,7 +23,9 @@
 	.global	_sio_rxinton
 	.func	_sio_rxinton
 _sio_rxinton:
-	sbi		UCSRB,7				; Enable RX ints
+	lds		r24,UCSR0B			; Disable RX ints
+	ori		r24,0x80
+	sts		UCSR0B,r24
 	ret
 	.endfunc
 ;
@@ -33,27 +35,33 @@ _sio_rxinton:
 	.global	_sio_rxintoff
 	.func	_sio_rxintoff
 _sio_rxintoff:
-	cbi		UCSRB,7				; Disable RX ints
+	lds		r24,UCSR0B			; Disable RX ints
+	andi	r24,0x7f
+	sts		UCSR0B,r24
 	ret
 	.endfunc
 ;
 ; void _sio_txinton();
 ;
 ; Enable transmission interrupts.
-	.global	_sio_txinton
-	.func	_sio_txinton
+	.global _sio_txinton
+	.func   _sio_txinton
 _sio_txinton:
-	sbi		UCSRB,5				; Enable TX ints
+	lds		r24,UCSR0B			; Enable TX ints
+	ori		r24,0x20
+	sts		UCSR0B,r24
 	ret
 	.endfunc
 ;
 ; void _sio_txintoff();
 ;
 ; Disable transmission interrupts.
-	.global	_sio_txintoff
-	.func	_sio_txintoff
+	.global _sio_txintoff
+	.func   _sio_txintoff
 _sio_txintoff:
-	cbi		UCSRB,5				; Disable TX ints
+	lds		r24,UCSR0B			; Disable TX ints
+	andi	r24,0xdf
+	sts		UCSR0B,r24
 	ret
 	.endfunc
 ;

@@ -17,13 +17,13 @@
 ;
 .include "macros.inc"
 ;
-; void _sio_in();
+; void sio_in();
 ;
 ; Serial I/O input interrupt routine (RX).
 	.section .init6,"ax",@progbits
-	.global	_sio_in
-	.func	_sio_in
-_sio_in:
+	.global	sio_in
+	.func	sio_in
+sio_in:
 	push	r24					; Save the status register
 	in		r24,SREG
 	push	r24
@@ -31,7 +31,7 @@ _sio_in:
 	push	r26
 	push	r27
 ;
-	in		r26,UDR				; Pull the character
+	lds		r26,UDR0			; Pull the character
 	lds		r24,ihead			; Get head & tail
 	lds		r25,itail
 	inc		r24
@@ -53,12 +53,12 @@ _sio_in:
 	rjmp	siol1				; We're done
 	.endfunc
 ;
-; void _sio_out();
+; void sio_out();
 ;
 ; Serial I/O output interrupt routine (TX).
-	.global	_sio_out
-	.func	_sio_out
-_sio_out:
+	.global	sio_out
+	.func	sio_out
+sio_out:
 	push	r24					; Save the status register
 	in		r24,SREG
 	push	r24
@@ -72,7 +72,7 @@ _sio_out:
 	add		r26,r24
 	adc		r27,r1				; R1 is always zero!!!
 	ld		r25,X				; Get the character in the ring
-	out		UDR,r25				; Transmit it
+	sts		UDR0,r25			; Transmit it
 ;
 	inc		r24					; Increment the tail pointer
 	andi	r24,31
@@ -80,7 +80,7 @@ _sio_out:
 	lds		r25,ohead			; Get the head pointer
 	cp		r24,r25				; Buffer empty?
 	brne	siol1				; No, continue
-	cbi		UCSRB,5				; Yes - disable TX ints
+	rcall	_sio_txintoff
 ;
 ; Common return routine from interrupts.
 siol1:
