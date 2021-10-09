@@ -65,6 +65,7 @@
 	.global	_bootstrap
 	.func	_rbootstrap
 _bootstrap:
+	cli
 	clr	r1
 	out	SREG,r1
 	ldi	r16,hi8(RAMEND)			; Set up the stack pointer
@@ -227,7 +228,7 @@ ulhex:	add	r14,r24
 dorst:	cpi	r17,1				; state == 1?
 	breq	dr1
 	rjmp	again				; Nope.  Ignore it.
-dr1:	rjmp	_reset
+dr1:	jmp	_reset
 ;
 ; Program a page of memory
 doprog:	cpi	r17,134				; state == 134?
@@ -247,11 +248,8 @@ dp2:	in	r0,SPMCR			; Check the RWW is ready.
 	ldi	r24,0x11			; RWWSRE|SPMEN
 	rcall	dospm
 	rjmp	dp2				; Try again...
-	.endfunc
 ;
 ; Do an SPM command...
-	.section .bstrap0,"ax",@progbits
-	.func	dospm
 dospm:	in	r0,SPMCR			; Get the SPM status register
 	sbrc	r0,0				; SPMEN set?
 	rjmp	dospm				; No, keep waiting...
@@ -260,52 +258,40 @@ spmw:	sbic	EECR,1				; EEWE clear?
 	out	SPMCR,r24			; Set the SPM control register
 	spm					; DO IT, BABY!
 	ret
-	.endfunc
 ;
 ; Output a hex byte to the serial port.
-	.section .bstrap0,"ax",@progbits
-	.func	puth2
 puth2:	mov	r4,r24				; Save the byte
 	swap	r24				; Get the high half
 	rcall	puth1				; Output it via puth1
 	mov	r24,r4				; Restore the byte
-	.endfunc				; Fall through to puth1...
 ;
 ; Output a hex nybble to the serial port.
-	.section .bstrap0,"ax",@progbits
-	.func	puth1
 puth1:	andi	r24,0x0f			; Only want lower 4 bits
 	cpi	r24,10				; Is it 'a' to 'f'?
 	brlo	ph2				; No...
 	subi	r24,-39				; Yes, adjust
 ph2:	subi	r24,-48				; Convert to ASCII
-	.endfunc				; Fall through to putch...
 ;
 ; Output a charater to the serial port.
-	.section .bstrap0,"ax",@progbits
-	.func	putch
 putch:	cpi	r24,'\n'			; Linefeed?
 	brne	pc1				; No, it's OK, just do it.
 	ldi	r24,'\r'
 	rcall	putch				; Output a CR
 	ldi	r24,'\n'			; Now output the linefeed
 ;
-pc1:	sbis	UCSRA,5				; Loop until buffer is empty
+pc1:	lds	r12,UCSR0A			; Loop until buffer is empty
+	sbrs	r12,5
 	rjmp	pc1
-	out	UDR,r24				; Output the character
+	sts	UDR0,r24			; Output the character
 	ret
-	.endfunc
 ;
 ; Fetch a character from the serial port.
-	.global	fetch
-	.section .bstrap0,"ax",@progbits
-	.func	fetch
-fetch:	sbis	UCSRA,7				; Loop until a char received
+fetch:	lds	r12,UCSR0A			; Loop until a char received
+	sbrs	r12,7
 	rjmp	fetch
-	in	r24,UDR				; Pull in the character
+	lds	r24,UDR0			; Pull in the character
 	andi	r24,0x7f			; Strip parity
 	ret
-	.endfunc
 ;
 ; The following is a switch-table, which implements a C case statement.
 	.p2align 1
@@ -364,5 +350,6 @@ swtab:	rjmp	bsnum				; '0'
 	rjmp	lchex				; 'd'
 	rjmp	lchex				; 'e'
 	rjmp	lchex				; 'f'
+	.endfunc
 ;
 ; Fin.

@@ -66,8 +66,6 @@ void	sio_enqueue(char, char);
 int		sio_iqueue_empty();
 int		sio_oqueue_empty();
 int		analog_read(int);
-int		eeprom_rdword(int);
-void	eeprom_wrword(int, int);
 
 int		pidcalc(struct pid *, int);
 
@@ -80,8 +78,6 @@ void	_reset();
 void	_sleep();
 void	_watchdog();
 void	_wdenable();
-uchar_t	_rdeeprom(uint_t);
-void	_wreeprom(uint_t, uchar_t);
 void	_setled(uchar_t);
 void	_bootstrap();
 void	_sio_rxinton();

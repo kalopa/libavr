@@ -47,12 +47,11 @@ LIBS=	-lavr
 
 ASRCS=	reset.S \
 	clkint.S watchdog.S sleep.S \
-	rdeeprom.S wreeprom.S \
 	serinten.S sioint.S pktint.S \
 	anastart.S anaread.S \
 	setled.S \
 	bootstrap.S
-CSRCS=	event.c sioget.c sioput.c analog.c eeprom.c pid.c
+CSRCS=	event.c sioget.c sioput.c analog.c pid.c
 OBJS=	$(ASRCS:.S=.o) $(CSRCS:.c=.o)
 LIB=	libavr.$(DEVICE).a
 
