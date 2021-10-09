@@ -14,342 +14,359 @@
 ; Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 ;
 ; ABSTRACT
-; This file contains the bootstrap code for reprogramming the AVR
-; firmware.  It is invoked by calling _bootstrap from the main code.
+; Using the serial port, bootstrap new firmware. For the ATMega328, the
+; application firmware runs from 0x0000 to 0x3eff and the boot loader
+; runs from 0x3f00 to 0x3fff (word addressing). This allows for 256
+; words (512 bytes) of bootstrap instructions, or four pages.
 ;
-; The bootstrap command set is fairly primitive (we only have 256
-; words to get it done).  All commands begin with an at-sign ('@').
-; If the next character is an 'R', then do a reset.  Otherwise, we
-; expect exactly four hex characters.  After this, we get one of
-; ':', '?' or 'E'.  Colon is used to program the flash memory, '?'
-; is used to read flash memory and 'E' is used to erase it.  If we
-; are programming memory, then the ':' character is followed by 64
-; bytes (one page) of program data.  At the end of this is a 'Z'
-; character.  Any deviation from this sequence will cause the
-; bootstrap to ignore the command.  The '?' command will result in
-; 64 bytes of data from flash memory to be echoed back, followed
-; by a CRLF sequence.  The 'E' command will cause the specified
-; page to be erased.
+; BOOTSZ1=1, BOOTSZ0=1.
 ;
-; The following is an example of some bootstrap commands:
-; Reset:
-; @R
+; The bootstrap subprogram is invoked by calling _bootstrap from the main
+; code. It will reconfigure the serial port and runs without interrupts. The
+; serial port will now run at 9600 baud (slower for better reliability).
 ;
-; Dump 64 bytes of flash memory:
-; @xxxx?
+; The serial commands are as follows:
+;	0-7xx	Upload 16 bytes of program data to memory
+;	Dnn		Dump page 'nn' of program flash
+;	Ebb		Erase a block (bb) of flash memory
+;	M		Dump the memory buffer
+;	Pbb		Program a block (bb) of flash memory
+;	R		Reset the system (jump to zero)
 ;
-; Erase a page of flash memory:
-; @xxxxX
+; The argument to the dump command is the ubber byte of the address. So
+; D7F will dump from 7f00 through 7fff. The argument to the Erase and
+; Program commands is a block number in the range 00->FF, so they work
+; on blocks of 128 bytes. As the upload command only accepts 16 bytes,
+; you need 8 of them to upload a complete block into memory.
 ;
-; Program a page of flash memory:
-; @xxxx:nnnnnn....(64 bytes of data)...nnZ
+; Success is indicated by a '+' and an error by a '-'. As it is sometimes
+; possible to get lost in a command, there is a sync character '!' which
+; can be produced by sending a carriage-return (repeatedly). So if you
+; don't know if you're in a command which wants input and you want to abort,
+; keep hitting return until you see the resync.
 ;
-; Remember to erase each page before programming it.
+; To bootstrap memory, upload 128 bytes of block data, 16 bytes at a time,
+; using the 0 through 7 commands. You can verify what you've uploaded by
+; using the M command. You can erase a block of flash (other than this
+; code) by using the 'E' command, and then the 'P' command for the block.
+; use the 'D' command to dump 256 bytes of flash memory, to verify the
+; programming correctly. Bear in mind that the 'nn' argument to the D
+; command is not the same as the 'bb' argument to the E and P commands.
 ;
-; Register usage is as follows:
-; r14,r15:	val
-; r16:		ch
-; r17		state
-; r18,r19:	aptr
+; To upload sixteen bytes to the end of the memory buffer (112->127) use a
+; command such as:
+;	790.91.92.93.94.95.96.97.98.99.9A.9B.9C.9D.9E.9F.
+; The command is 7, followed by 16 hex values, each separated/terminated by
+; a full stop. You can verify this has happened, via the 'M' command.
 ;
-.include "macros.inc"
+; WARNING/LIMITATIONS:
+; As of now, this code is very hard-wired to the ATMega328p, and occupies
+; around 460 bytes of code. It needs to be made more portable...
 ;
-; Life begins here...
+; The baud rate is a tricky one. This code does not want to assume that
+; the serial port has been configured. It first checks that the serial
+; device is enabled - if so, it assumes everything has been configured
+; correctly. Otherwise, it'll configure the stack and the serial port.
+; It will set a slow baud rate (9600) to minimize errors over the serial
+; line.
+;
+#include <avr/io.h>
 ;
 ; void _bootstrap();
 ;
-; To begin, initialize the stack frame, then start pulling bytes
-; from the serial port.
-	.text
-	.section .bstrap0,"ax",@progbits
+        .section .bstrap0,"ax",@progbits
+;
 	.global	_bootstrap
-	.func	_rbootstrap
+	.func	_bootstrap
 _bootstrap:
-	cli
-	clr	r1
-	out	SREG,r1
-	ldi	r16,hi8(RAMEND)			; Set up the stack pointer
-	out	SPH,r16
-	ldi	r16,lo8(RAMEND)
-	out	SPL,r16
+	cli								; No interrupts, please!
+	clr		r1
+	out		_SFR_IO_ADDR(SREG),r1
+	lds		r24,UCSR0B				; Get the serial port CSR
+	andi	r24,0x18				; Is it initialized?
+	brne	1f
 ;
-again:	clr	r14				; val = 0;
-	clr	r15
-	clr	r17				; state = 0;
-bsloop:	mov	r24,r17
-	rcall	puth2
-	ldi	r24,'>'
-	rcall	putch
-	rcall	fetch				; Retrieve a character
-	mov	r16,r24				; Save it in ch
-	tst	r17				; state == 0??
-	brne	dobssw				; No, go handle the char
+; Serial port not enabled - set it up with the stack. Configure the UART for
+; serial communications at 9600 baud (polled).
+	ldi		r16,lo8(RAMEND)			; Set up the stack pointer
+	ldi		r17,hi8(RAMEND)
+	out		_SFR_IO_ADDR(SPH),r17
+	out		_SFR_IO_ADDR(SPL),r16
 ;
-; In the zero state, wait for an '@'.
-bs2:	cpi	r24,'@'				; Is it an @?
-	brne	again				; No, don't want it
+	ldi		r24,103					; Baud rate to 9600 @ 16MHz
+	sts		UBRR0H,r1
+	sts		UBRR0L,r24
+	ldi		r24,0x06				; UCSZ01|UCSZ00
+	sts		UCSR0C,r24
 ;
-	ldi	r17,1				; state = 1;
-	rjmp	bsloop				; Start again.
+1:	ldi		r24,0x18				; RXEN0|TXEN0
+	sts		UCSR0B,r24
 ;
-dobssw:	clr	r25				; Make switch jump table
-	clr	r26
-	clr	r27
-	movw	r30,r24				; Save the address
-	sbiw	r30,'0'				; Subtract '0'
-	cpi	r30,55				; We still in the game?
-	cpc	r31,r25
-	brsh	again				; Nope.
-	subi	r30,lo8(-(gs(swtab)))		; Add the switch table
-	sbci	r31,hi8(-(gs(swtab)))
-	ijmp					; Do the 'case' statement
+	ldi		r31,hi8(_bstrap_msg)	; Point to start message
+	ldi		r30,lo8(_bstrap_msg)
+2:	lpm		r24,Z+					; Get each character
+	tst		r24						; End of string?
+	breq	mloop					; Yeah - go to start
+	rcall	sio_out					; Output character
+	rjmp	2b						; Get next
 ;
-; We're done - now deal with each of the switch cases...
+good:
+	ldi		r24,'+'					; Confirm success
+	rcall	sio_out
 ;
-; Deal with a numeric digit ('0' -> '9')
-bsnum:	swap	r14				; val <<= 4;
-	swap	r15
-	ldi	r21,0xf0
-	and	r15,r21
-	eor	r15,r14
-	and	r14,r21
-	eor	r15,r14
-	clr	r21
-	add	r14,r16				; val += ch;
-	adc	r15,r21
-	ldi	r24,lo8(-48)			; val -= '0';
-	ldi	r25,hi8(-48)
-	add	r14,r24
-	adc	r15,r25
-	subi	r17,lo8(-(1))			; state++;
+mloop:
+	ldi		r24,'\n'				; Output a CR/LF
+	rcall	sio_out
+	rcall	sio_in					; Read a command character
+	cpi		r24,'\r'				; Carriage-return?
+	brne	chkr					; No, try the next option
+	ldi		r24,'!'					; Output a special sync character
+	rcall	sio_out
+	rjmp	mloop					; Go again
 ;
-; Are we OK to stuff the character?
-cstuff:	cpi	r17,7				; Need to be in state7 or better
-	brlo	bsloop				; No, don't do it.
-	mov	r24,r17				; Are we even?
-	andi	r24,3
-	cpi	r24,2
-	brne	bsloop
-	ldi	r24,'['
-	rcall	putch
-	mov	r24,r29
-	rcall	puth2
-	mov	r24,r28
-	rcall	puth2
-	ldi	r24,'='
-	rcall	putch
-	mov	r24,r15
-	rcall	puth2
-	mov	r24,r14
-	rcall	puth2
-	ldi	r24,']'
-	rcall	putch
-	movw	r30,r28				; Get the page address
-	movw	r0,r14				; Fetch the word
-	ldi	r24,0x01			; SPMEN
-	rcall	dospm				; Burn the word!
-	adiw	r28,2
-	clr	r14
-	clr	r15
-	rjmp	bsloop				; Go again...
+; Reset the board?
+chkr:
+	cpi		r24,'R'					; Reset command?
+	brne	chkd					; No, try the next option
+	jmp		0						; Easy - just go to the zero addr
 ;
-; We received a ':' which is an address delimiter
-colon:	cpi	r17,5				; State 5?
-	brne	a2				; Nope.
-	movw	r28,r14				; aptr = val
-	ldi	r17,6				; state = 6;
-	rjmp	bsloop
+; Dump?
+chkd:
+	cpi		r24,'D'
+	brne	chkm					; No, try the next option
+	rcall	get_hex8				; Get the block address
+	brcs	error
+	mov		r31,r24					; Set up the Z register
+	clr		r30
 ;
-; Do a page erase...
-erase:	cpi	r17,5				; state == 5?
-	brne	a2				; Nope.
-	movw	r30,r14				; Z = val
-	ldi	r24,0x03			; PGERS|SPMEN
-	rcall	dospm
-	ldi	r24,0x11			; RWWSRE|SPMEN
-	rcall	dospm
-	rjmp	again
+	ldi		r16,16					; Sixteen lines of output
+1:	ldi		r17,16					; Sixteen bytes in each
+	ldi		r24,'P'					; Start with a 'P' (Flash output)
+	rcall	sio_out
+	rcall	z_out					; Output the address
+2:	ldi		r24,' '					; Lead with a space
+	rcall	sio_out
+	lpm		r24,Z+					; Fetch the program byte
+	rcall	hex_out					; Output it
+	dec		r17						; Inner loop decrement
+	brne	2b
+	ldi		r24,'\n'				; End of line
+	rcall	sio_out
+	dec		r16						; Outer loop decrement
+	brne	1b
+	rjmp	good					; And we're done!
 ;
-; We received a '?' which means dump a block of memory to the RS232 port
-quest:	cpi	r17,5				; State 5?
-	brne	a2				; Nope.
-	movw	r30,r14				; aptr = val;
+; Dump the memory buffer?
+chkm:
+	cpi		r24,'M'					; Dump memory buffer?
+	brne	chkn					; No, try the next option
 ;
-	mov	r24,r31
-	rcall	puth2
-	mov	r24,r30
-	rcall	puth2
-	ldi	r24,':'
-	rcall	putch
+	ldi		r31,hi8(0x100)			; Set the memory address
+	ldi		r30,lo8(0x100)
+	ldi		r16,8					; Eight lines of output
+1:	ldi		r17,16					; Sixteen bytes in each
+	ldi		r24,'M'					; Start with an 'M' (memory output)
+	rcall	sio_out
+	mov		r24,r30
+	rcall	hex_out					; Output the address
+2:	ldi		r24,' '					; Lead with a space
+	rcall	sio_out
+	ld		r24,Z+					; Read the memory address
+	rcall	hex_out					; Output it
+	dec		r17						; Inner loop decrement
+	brne	2b
+	ldi		r24,'\n'				; End of line
+	rcall	sio_out
+	dec		r16						; Outer loop decrement
+	brne	1b
+	rjmp	good					; And we're done!
 ;
-	clr	r17				; Clear the counter
-ql1:	lpm	r24,Z+				; Read a byte from flash
-	rcall	puth2
-	subi	r17,lo8(-(1))			; Increment loop
-	cpi	r17,PAGESIZEB			; Done?
-	brne	ql1				; No, get the next byte
+; Report an error and try again.
+error:
+	ldi		r24,'-'					; Output brief error message
+	rcall	sio_out
+	rjmp	mloop					; Try again...
 ;
-	ldi	r24,'\n'			; Output a linefeed
-	rcall	putch
-a2:	rjmp	again
+; Program?
+chkn:
+	cpi		r24,'0'					; >= '0'?
+	brlt	chke					; No, try the next option
+	cpi		r24,'8'					; <= '7'?
+	brge	chke					; No, try the next option
+	subi	r24,'0'					; Ok, convert from ASCII
+	lsl		r24						; Convert to a memory address
+	lsl		r24
+	lsl		r24
+	lsl		r24
+	mov		r30,r24
+	ldi		r31,hi8(0x100)
 ;
-; Received an upper-case hex character.
-uchex:	swap	r14				; val <<= 4;
-	swap	r15
-	ldi	r24,0xf0
-	and	r15,r24
-	eor	r15,r14
-	and	r14,r24
-	eor	r15,r14
-	add	r14,r18				; val += ch;
-	adc	r15,r1
-	ldi	r24,lo8(-55)			; val -= 55;
-	ldi	r25,hi8(-55)
-	rjmp	ulhex
+; Program code.
+	ldi		r16,16					; Retrieve sixteen bytes
+1:	rcall	get_hex8				; Get each data value
+	st		Z+,r24					; Store it in memory
+	rcall	sio_in					; Delimit with dots
+	cpi		r24,'.'
+	brne	error					; No? Data error - give up
+	dec		r16						; Decrement loop
+	brne	1b						; Keep going for all 16
+	rjmp	good					; Now we're done
 ;
-; Received a lower-case hex character.
-lchex:	swap	r14				; val <<= 4;
-	swap	r15
-	ldi	r25,0xf0
-	and	r15,r25
-	eor	r15,r14
-	and	r14,r25
-	eor	r15,r14
-	add	r14,r18				; val += ch;
-	adc	r15,r1
-	ldi	r24,lo8(-87)			; val -= 87;
+; Erase a page?
+chke:
+	cpi		r24,'E'					; 'E' command?
+	brne	chkp					; No, try the next option
+	rcall	get_hex8				; Get page address
+	brcs	error
+	mov		r25,r24					; Disallow bootloader erase
+	andi	r25,0xfc
+	cpi		r25,0xfc
+	breq	error					; Error - trying to access boot loader
 ;
-ulhex:	add	r14,r24
-	adc	r15,r25
-	subi	r17,lo8(-(1))
-	rjmp	cstuff
+; Erase a page in flash
+	rcall	page_conv				; Convert to a memory (byte) address
+	ldi		r24,(1<<PGERS)|(1<<SPMEN)	; Do page erase
+	rcall	do_spm
+	ldi		r24,(1<<RWWSRE)|(1<<SPMEN)	; Re-enable RWW section
+	rcall	do_spm
+	rjmp	good
 ;
-; Do a 'restart'...
-dorst:	cpi	r17,1				; state == 1?
-	breq	dr1
-	rjmp	again				; Nope.  Ignore it.
-dr1:	jmp	_reset
+; Write a block?
+chkp:
+	cpi		r24,'P'					; 'P' command?
+	brne	error					; No, then we have an error
+	rcall	get_hex8				; Get page address
+	brcs	error
+	mov		r25,r24					; Disallow bootloader programming
+	andi	r25,0xfc
+	cpi		r25,0xfc
+	breq	error					; Error - trying to write boot loader
 ;
-; Program a page of memory
-doprog:	cpi	r17,134				; state == 134?
-	breq	dp1
-	rjmp	again				; No, reset instead
-dp1:	subi	r28,lo8(PAGESIZEB)		; Back to start of page
-	sbci	r29,hi8(PAGESIZEB)
-	movw	r30,r28				; Z = aptr
-	ldi	r24,0x05			; PGWRT|SPMEN
-	rcall	dospm
-	ldi	r24,0x11			; RWWSRE|SPMEN
-	rcall	dospm
+; Write a page from memory
+	rcall	page_conv				; Convert to a memory (byte) address
+	ldi		r16,64					; 64 words per page
+	ldi		r28,lo8(0x100)			; Y = 0x100
+	ldi		r29,hi8(0x100)
+	push	r30						; Save the memory address for later
+	push	r31
+1:	ld		r0,Y+					; Load a word from memory
+	ld		r1,Y+
+	ldi		r24,(1<<SPMEN)			; Write it using the SPM instruction
+	rcall	do_spm
+	adiw	r30,2					; Next word address
+	dec		r16						; Decrement count
+	brne	1b						; Keep going until page done
 ;
-dp2:	in	r0,SPMCR			; Check the RWW is ready.
-	sbrs	r0,6				; RWWSB is still set?
-	rjmp	again				; OK, we're good
-	ldi	r24,0x11			; RWWSRE|SPMEN
-	rcall	dospm
-	rjmp	dp2				; Try again...
+	pop		r31						; Restore memort address
+	pop		r30
+	ldi		r24,(1<<PGWRT)|(1<<SPMEN)	; Do page write
+	rcall	do_spm
+	ldi		r24,(1<<RWWSRE)|(1<<SPMEN)	; Re-enable RWW section
+	rcall	do_spm
+	rjmp	good
 ;
-; Do an SPM command...
-dospm:	in	r0,SPMCR			; Get the SPM status register
-	sbrc	r0,0				; SPMEN set?
-	rjmp	dospm				; No, keep waiting...
-spmw:	sbic	EECR,1				; EEWE clear?
-	rjmp	spmw				; No, keep waiting
-	out	SPMCR,r24			; Set the SPM control register
-	spm					; DO IT, BABY!
+; Do an SPM operation (SPMCSR value in r24)
+do_spm:
+	in		r25,_SFR_IO_ADDR(SPMCSR)	; Read the SPM CSR
+	sbrc	r25,SPMEN				; Check bit0 (SPMEN=0)
+	rjmp	do_spm					; Retry...
+	out		_SFR_IO_ADDR(SPMCSR),r24	; Write new CSR value
+	spm
 	ret
 ;
-; Output a hex byte to the serial port.
-puth2:	mov	r4,r24				; Save the byte
-	swap	r24				; Get the high half
-	rcall	puth1				; Output it via puth1
-	mov	r24,r4				; Restore the byte
-;
-; Output a hex nybble to the serial port.
-puth1:	andi	r24,0x0f			; Only want lower 4 bits
-	cpi	r24,10				; Is it 'a' to 'f'?
-	brlo	ph2				; No...
-	subi	r24,-39				; Yes, adjust
-ph2:	subi	r24,-48				; Convert to ASCII
-;
-; Output a charater to the serial port.
-putch:	cpi	r24,'\n'			; Linefeed?
-	brne	pc1				; No, it's OK, just do it.
-	ldi	r24,'\r'
-	rcall	putch				; Output a CR
-	ldi	r24,'\n'			; Now output the linefeed
-;
-pc1:	lds	r12,UCSR0A			; Loop until buffer is empty
-	sbrs	r12,5
-	rjmp	pc1
-	sts	UDR0,r24			; Output the character
+; Convert r24 to 16bit (Z) page address
+page_conv:
+	mov		r30,r24					; Move r24 to Z
+	clr		r31
+	ldi		r24,7					; Page size << 7
+1:	lsl		r30						; Shift LSB (into C)
+	rol		r31						; Shift MSB (from C)
+	dec		r24						; Continue...
+	brne	1b
 	ret
 ;
-; Fetch a character from the serial port.
-fetch:	lds	r12,UCSR0A			; Loop until a char received
-	sbrs	r12,7
-	rjmp	fetch
-	lds	r24,UDR0			; Pull in the character
-	andi	r24,0x7f			; Strip parity
+; Read a 8-bit hex value.
+get_hex8:
+	rcall	get_hex4				; Get a nybble (bits7:4)
+	brcs	1f						; Error? abort now.
+	swap	r24						; Move to upper bits
+	mov		r25,r24					; Save in r25
+	rcall	get_hex4				; Get other nybble (bits3:0)
+	brcs	1f						; Error? abort now
+	or		r24,r25					; Add in the upper bits
+1:	ret
+;
+; Read a hex nybble.
+get_hex4:
+	clc								; Clear the C bit (just in case)
+	rcall	sio_in					; Get one character
+	cpi		r24,'0'					; Less than '0'?
+	brlt	2f						; Yeah - fail
+	cpi		r24,':'					; Greater than '9'?
+	brge	1f						; Yeah - maybe it's [A-F]
+	subi	r24,'0'					; Subtract ASCII
+	clc								; Clear carry, and we're done
+	ret
+1:	cpi		r24,'A'					; Less than 'A'?
+	brlt	2f						; Yeah - fail
+	cpi		r24,'G'					; Greater than 'F'?
+	brge	2f						; Again, fail
+	subi	r24,55					; Remove ASCII
+	clc								; Clear carry, and we're done
 	ret
 ;
-; The following is a switch-table, which implements a C case statement.
-	.p2align 1
-swtab:	rjmp	bsnum				; '0'
-	rjmp	bsnum				; '1'
-	rjmp	bsnum				; '2'
-	rjmp	bsnum				; '3'
-	rjmp	bsnum				; '4'
-	rjmp	bsnum				; '5'
-	rjmp	bsnum				; '6'
-	rjmp	bsnum				; '7'
-	rjmp	bsnum				; '8'
-	rjmp	bsnum				; '9'
-	rjmp	colon				; ':'
-	rjmp	again				; ';'
-	rjmp	again				; '<'
-	rjmp	again				; '='
-	rjmp	again				; '>'
-	rjmp	quest				; '?'
-	rjmp	again				; '@'
-	rjmp	uchex				; 'A'
-	rjmp	uchex				; 'B'
-	rjmp	uchex				; 'C'
-	rjmp	uchex				; 'D'
-	rjmp	uchex				; 'E'
-	rjmp	uchex				; 'F'
-	rjmp	again				; 'G'
-	rjmp	again				; 'H'
-	rjmp	again				; 'I'
-	rjmp	again				; 'J'
-	rjmp	again				; 'K'
-	rjmp	again				; 'L'
-	rjmp	again				; 'M'
-	rjmp	again				; 'N'
-	rjmp	again				; 'O'
-	rjmp	again				; 'P'
-	rjmp	again				; 'Q'
-	rjmp	dorst				; 'R'
-	rjmp	again				; 'S'
-	rjmp	again				; 'T'
-	rjmp	again				; 'U'
-	rjmp	again				; 'V'
-	rjmp	again				; 'W'
-	rjmp	erase				; 'X'
-	rjmp	again				; 'Y'
-	rjmp	doprog				; 'Z'
-	rjmp	again				; '['
-	rjmp	again				; '\\'
-	rjmp	again				; ']'
-	rjmp	again				; '^'
-	rjmp	again				; '_'
-	rjmp	again				; '`'
-	rjmp	lchex				; 'a'
-	rjmp	lchex				; 'b'
-	rjmp	lchex				; 'c'
-	rjmp	lchex				; 'd'
-	rjmp	lchex				; 'e'
-	rjmp	lchex				; 'f'
+2:	sec								; Failed - set carry and return
+	ret
+;
+; Input a character from the serial port to r24.
+sio_in:
+	lds		r24,UCSR0A				; Get the UART status
+	sbrs	r24,7					; RXC0 set?
+	rjmp	sio_in					; No. Try again.
+	lds		r24,UDR0				; Receive the character
+	cpi		r24,'a'					; Convert to uppercase
+	brlt	1f
+	cpi		r24,'z'+1
+	brge	1f
+	subi	r24,32
+1:	ret
+;
+; Output the contents of the 'Z' register
+z_out:
+	mov		r24,r31					; Get the high byte
+	rcall	hex_out					; Output it
+	mov		r24,r30					; Get the low byte
+;
+; Output an 8-bit HEX value from r24.
+hex_out:
+	push	r24						; Save value for now
+	swap	r24						; Get high 4 bits
+	rcall	1f						; Call our local function
+	pop		r24						; Now restore original value
+;
+1:	andi	r24,0x0f				; Only want lower 4 bits
+	subi	r24,-48					; Add '0'
+	cpi		r24,':'					; If it's less than 10...
+	brlt	sio_out					; ... output it
+	subi	r24,-7					; Adjust for A-F
+;
+; Output the character in r24 to the serial port
+sio_out:
+	cpi		r24,'\n'				; Is this a newline?
+	brne	1f						; No - handle normally
+	ldi		r24,'\r'				; Yes - first output a CR
+	rcall	1f
+	ldi		r24,'\n'				; Now output the LF
+;
+1:	lds		r25,UCSR0A				; Get the UART status
+	sbrs	r25,5					; UDRE0 set?
+	rjmp	1b						; No. Try again.
+	sts		UDR0,r24				; Send the character
+	ret
+;
+	.global	_bstrap_msg
+_bstrap_msg:
+	.string	"BOOTv2"
 	.endfunc
 ;
-; Fin.
+; Fin
