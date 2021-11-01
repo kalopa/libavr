@@ -16,7 +16,7 @@
 ; ABSTRACT
 ; Start an Analog to Digital conversion.
 ;
-.include "macros.inc"
+#include <avr/io.h>
 ;
 ; void _ana_start(uchar_t);
 ;

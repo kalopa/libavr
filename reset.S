@@ -15,7 +15,7 @@
 ;
 ; ABSTRACT
 ;
-.include "macros.inc"
+#include <avr/io.h>
 ;
 ; void _reset();
 ;
@@ -31,11 +31,11 @@
 _reset:
 	cli
 	clr		r1
-	out		SREG,r1
+	out		__SREG__,r1
 	ldi		r16,lo8(RAMEND)				; Set up the stack pointer
 	ldi		r17,hi8(RAMEND)
-	out		SPH,r17
-	out		SPL,r16
+	out		__SPH__,r17
+	out		__SPL__,r16
 	call	_ioinit						; Set up the I/O ports
 ;
 ; Initialize BSS and data memory.
@@ -44,24 +44,19 @@ _reset:
 	ldi		r27,hi8(__data_start)
 	ldi		r30,lo8(__data_load_start)	; Z = program memory
 	ldi		r31,hi8(__data_load_start)
-	rjmp	bssl2
-bssl1:
-	lpm									; Fetch a byte from prog mem
+	rjmp	2f
+1:	lpm									; Fetch a byte from prog mem
 	adiw	r30,1						; Increment Z
 	st		x+,r0						; Save in [X]
-bssl2:
-	cpi		r26,lo8(__data_end)			; We done yet?
+2:	cpi		r26,lo8(__data_end)			; We done yet?
 	cpc		r27,r17
-	brne	bssl1						; No, copy some more
-
+	brne	1b						; No, copy some more
 	ldi		r17,hi8(__bss_end)			; Point to end of memory
-	rjmp	bssl4
-bssl3:
-	st		x+,r1						; Clear memory
-bssl4:
-	cpi		r26,lo8(__bss_end)			; We done yet?
+	rjmp	4f
+3:	st		x+,r1						; Clear memory
+4:	cpi		r26,lo8(__bss_end)			; We done yet?
 	cpc		r27,r17
-	brne	bssl3						; No, keep trucking
+	brne	3b						; No, keep trucking
 ;
 ; We're ready for prime time - call the C code.
 	call	main						; Call the main routine
@@ -74,6 +69,5 @@ bssl4:
 	.weak	__heap_end
 	.weak	__stack
 	.set	__heap_end,0
-	.set	__stack,RAMEND
 ;
 ; Fin

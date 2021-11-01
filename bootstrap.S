@@ -106,93 +106,91 @@ _bootstrap:
 	ldi		r30,lo8(_bstrap_msg)
 2:	lpm		r24,Z+					; Get each character
 	tst		r24						; End of string?
-	breq	mloop					; Yeah - go to start
-	rcall	sio_out					; Output character
+	breq	.mloop					; Yeah - go to start
+	rcall	.ser_out					; Output character
 	rjmp	2b						; Get next
 ;
-good:
+.good:
 	ldi		r24,'+'					; Confirm success
-	rcall	sio_out
+	rcall	.ser_out
 ;
-mloop:
+.mloop:
 	ldi		r24,'\n'				; Output a CR/LF
-	rcall	sio_out
-	rcall	sio_in					; Read a command character
+	rcall	.ser_out
+	ldi		r24,'>'				; Output a CR/LF
+	rcall	.ser_out
+	rcall	.ser_in					; Read a command character
 	cpi		r24,'\r'				; Carriage-return?
-	brne	chkr					; No, try the next option
-	ldi		r24,'!'					; Output a special sync character
-	rcall	sio_out
-	rjmp	mloop					; Go again
+	breq	.mloop					; No, try the next option
 ;
 ; Reset the board?
-chkr:
 	cpi		r24,'R'					; Reset command?
-	brne	chkd					; No, try the next option
+	brne	.chkd					; No, try the next option
 	jmp		0						; Easy - just go to the zero addr
 ;
 ; Dump?
-chkd:
+.chkd:
 	cpi		r24,'D'
-	brne	chkm					; No, try the next option
-	rcall	get_hex8				; Get the block address
-	brcs	error
+	brne	.chkm					; No, try the next option
+	rcall	.get_hex8				; Get the block address
+	brcs	.error
 	mov		r31,r24					; Set up the Z register
 	clr		r30
 ;
 	ldi		r16,16					; Sixteen lines of output
 1:	ldi		r17,16					; Sixteen bytes in each
 	ldi		r24,'P'					; Start with a 'P' (Flash output)
-	rcall	sio_out
-	rcall	z_out					; Output the address
+	rcall	.ser_out
+	rcall	.z_out					; Output the address
 2:	ldi		r24,' '					; Lead with a space
-	rcall	sio_out
+	rcall	.ser_out
 	lpm		r24,Z+					; Fetch the program byte
-	rcall	hex_out					; Output it
+	rcall	.hex_out					; Output it
 	dec		r17						; Inner loop decrement
 	brne	2b
 	ldi		r24,'\n'				; End of line
-	rcall	sio_out
+	rcall	.ser_out
 	dec		r16						; Outer loop decrement
 	brne	1b
-	rjmp	good					; And we're done!
+	rjmp	.good					; And we're done!
 ;
 ; Dump the memory buffer?
-chkm:
+.chkm:
 	cpi		r24,'M'					; Dump memory buffer?
-	brne	chkn					; No, try the next option
+	brne	.chkn					; No, try the next option
 ;
 	ldi		r31,hi8(0x100)			; Set the memory address
 	ldi		r30,lo8(0x100)
 	ldi		r16,8					; Eight lines of output
 1:	ldi		r17,16					; Sixteen bytes in each
 	ldi		r24,'M'					; Start with an 'M' (memory output)
-	rcall	sio_out
+	rcall	.ser_out
 	mov		r24,r30
-	rcall	hex_out					; Output the address
+	rcall	.hex_out					; Output the address
 2:	ldi		r24,' '					; Lead with a space
-	rcall	sio_out
+	rcall	.ser_out
 	ld		r24,Z+					; Read the memory address
-	rcall	hex_out					; Output it
+	rcall	.hex_out					; Output it
 	dec		r17						; Inner loop decrement
 	brne	2b
 	ldi		r24,'\n'				; End of line
-	rcall	sio_out
+	rcall	.ser_out
 	dec		r16						; Outer loop decrement
 	brne	1b
-	rjmp	good					; And we're done!
+	rjmp	.good					; And we're done!
 ;
 ; Report an error and try again.
-error:
+.error:
 	ldi		r24,'-'					; Output brief error message
-	rcall	sio_out
-	rjmp	mloop					; Try again...
+	rcall	.ser_out
+	rjmp	.mloop					; Try again...
 ;
 ; Program?
-chkn:
+.chkn:
 	cpi		r24,'0'					; >= '0'?
-	brlt	chke					; No, try the next option
+	brlt	.chke					; No, try the next option
 	cpi		r24,'8'					; <= '7'?
-	brge	chke					; No, try the next option
+	brge	.chke					; No, try the next option
 	subi	r24,'0'					; Ok, convert from ASCII
 	lsl		r24						; Convert to a memory address
 	lsl		r24
@@ -203,47 +201,47 @@ chkn:
 ;
 ; Program code.
 	ldi		r16,16					; Retrieve sixteen bytes
-1:	rcall	get_hex8				; Get each data value
+1:	rcall	.get_hex8				; Get each data value
 	st		Z+,r24					; Store it in memory
-	rcall	sio_in					; Delimit with dots
+	rcall	.ser_in					; Delimit with dots
 	cpi		r24,'.'
-	brne	error					; No? Data error - give up
+	brne	.error					; No? Data error - give up
 	dec		r16						; Decrement loop
 	brne	1b						; Keep going for all 16
-	rjmp	good					; Now we're done
+	rjmp	.good					; Now we're done
 ;
 ; Erase a page?
-chke:
+.chke:
 	cpi		r24,'E'					; 'E' command?
-	brne	chkp					; No, try the next option
-	rcall	get_hex8				; Get page address
-	brcs	error
+	brne	.chkp					; No, try the next option
+	rcall	.get_hex8				; Get page address
+	brcs	.error
 	mov		r25,r24					; Disallow bootloader erase
 	andi	r25,0xfc
 	cpi		r25,0xfc
-	breq	error					; Error - trying to access boot loader
+	breq	.error					; Error - trying to access boot loader
 ;
 ; Erase a page in flash
-	rcall	page_conv				; Convert to a memory (byte) address
+	rcall	.page_conv				; Convert to a memory (byte) address
 	ldi		r24,(1<<PGERS)|(1<<SPMEN)	; Do page erase
-	rcall	do_spm
+	rcall	.do_spm
 	ldi		r24,(1<<RWWSRE)|(1<<SPMEN)	; Re-enable RWW section
-	rcall	do_spm
-	rjmp	good
+	rcall	.do_spm
+	rjmp	.good
 ;
 ; Write a block?
-chkp:
+.chkp:
 	cpi		r24,'P'					; 'P' command?
-	brne	error					; No, then we have an error
-	rcall	get_hex8				; Get page address
-	brcs	error
+	brne	.error					; No, then we have an error
+	rcall	.get_hex8				; Get page address
+	brcs	.error
 	mov		r25,r24					; Disallow bootloader programming
 	andi	r25,0xfc
 	cpi		r25,0xfc
-	breq	error					; Error - trying to write boot loader
+	breq	.error					; Error - trying to write boot loader
 ;
 ; Write a page from memory
-	rcall	page_conv				; Convert to a memory (byte) address
+	rcall	.page_conv				; Convert to a memory (byte) address
 	ldi		r16,64					; 64 words per page
 	ldi		r28,lo8(0x100)			; Y = 0x100
 	ldi		r29,hi8(0x100)
@@ -252,7 +250,7 @@ chkp:
 1:	ld		r0,Y+					; Load a word from memory
 	ld		r1,Y+
 	ldi		r24,(1<<SPMEN)			; Write it using the SPM instruction
-	rcall	do_spm
+	rcall	.do_spm
 	adiw	r30,2					; Next word address
 	dec		r16						; Decrement count
 	brne	1b						; Keep going until page done
@@ -260,22 +258,22 @@ chkp:
 	pop		r31						; Restore memort address
 	pop		r30
 	ldi		r24,(1<<PGWRT)|(1<<SPMEN)	; Do page write
-	rcall	do_spm
+	rcall	.do_spm
 	ldi		r24,(1<<RWWSRE)|(1<<SPMEN)	; Re-enable RWW section
-	rcall	do_spm
-	rjmp	good
+	rcall	.do_spm
+	rjmp	.good
 ;
 ; Do an SPM operation (SPMCSR value in r24)
-do_spm:
+.do_spm:
 	in		r25,_SFR_IO_ADDR(SPMCSR)	; Read the SPM CSR
 	sbrc	r25,SPMEN				; Check bit0 (SPMEN=0)
-	rjmp	do_spm					; Retry...
+	rjmp	.do_spm					; Retry...
 	out		_SFR_IO_ADDR(SPMCSR),r24	; Write new CSR value
 	spm
 	ret
 ;
 ; Convert r24 to 16bit (Z) page address
-page_conv:
+.page_conv:
 	mov		r30,r24					; Move r24 to Z
 	clr		r31
 	ldi		r24,7					; Page size << 7
@@ -286,20 +284,20 @@ page_conv:
 	ret
 ;
 ; Read a 8-bit hex value.
-get_hex8:
-	rcall	get_hex4				; Get a nybble (bits7:4)
+.get_hex8:
+	rcall	.get_hex4				; Get a nybble (bits7:4)
 	brcs	1f						; Error? abort now.
 	swap	r24						; Move to upper bits
 	mov		r25,r24					; Save in r25
-	rcall	get_hex4				; Get other nybble (bits3:0)
+	rcall	.get_hex4				; Get other nybble (bits3:0)
 	brcs	1f						; Error? abort now
 	or		r24,r25					; Add in the upper bits
 1:	ret
 ;
 ; Read a hex nybble.
-get_hex4:
+.get_hex4:
 	clc								; Clear the C bit (just in case)
-	rcall	sio_in					; Get one character
+	rcall	.ser_in					; Get one character
 	cpi		r24,'0'					; Less than '0'?
 	brlt	2f						; Yeah - fail
 	cpi		r24,':'					; Greater than '9'?
@@ -319,10 +317,10 @@ get_hex4:
 	ret
 ;
 ; Input a character from the serial port to r24.
-sio_in:
+.ser_in:
 	lds		r24,UCSR0A				; Get the UART status
 	sbrs	r24,7					; RXC0 set?
-	rjmp	sio_in					; No. Try again.
+	rjmp	.ser_in					; No. Try again.
 	lds		r24,UDR0				; Receive the character
 	cpi		r24,'a'					; Convert to uppercase
 	brlt	1f
@@ -332,13 +330,13 @@ sio_in:
 1:	ret
 ;
 ; Output the contents of the 'Z' register
-z_out:
+.z_out:
 	mov		r24,r31					; Get the high byte
-	rcall	hex_out					; Output it
+	rcall	.hex_out					; Output it
 	mov		r24,r30					; Get the low byte
 ;
 ; Output an 8-bit HEX value from r24.
-hex_out:
+.hex_out:
 	push	r24						; Save value for now
 	swap	r24						; Get high 4 bits
 	rcall	1f						; Call our local function
@@ -347,11 +345,11 @@ hex_out:
 1:	andi	r24,0x0f				; Only want lower 4 bits
 	subi	r24,-48					; Add '0'
 	cpi		r24,':'					; If it's less than 10...
-	brlt	sio_out					; ... output it
+	brlt	.ser_out					; ... output it
 	subi	r24,-7					; Adjust for A-F
 ;
 ; Output the character in r24 to the serial port
-sio_out:
+.ser_out:
 	cpi		r24,'\n'				; Is this a newline?
 	brne	1f						; No - handle normally
 	ldi		r24,'\r'				; Yes - first output a CR

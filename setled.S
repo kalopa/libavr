@@ -15,7 +15,7 @@
 ;
 ; ABSTRACT
 ;
-.include "macros.inc"
+#include <avr/io.h>
 ;
 ; void _setled(uchar_t);
 ;
@@ -25,9 +25,9 @@
 _setled:
 	tst	r24				; LED on or off?
 	breq	sl1
-	cbi	PORTC,3				; Turn on the LED
+	cbi	__PORTC__,3				; Turn on the LED
 	ret
-sl1:	sbi	PORTC,3				; Turn off the LED
+sl1:	sbi	__PORTC__,3				; Turn off the LED
 	ret
 	.endfunc
 ;

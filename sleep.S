@@ -15,7 +15,7 @@
 ;
 ; ABSTRACT
 ;
-.include "macros.inc"
+#include <avr/io.h>
 ;
 ; void _sleep();
 ;
@@ -24,10 +24,10 @@
 	.func	_sleep
 _sleep:
 	sei					; Make sure interrupts are on
-	in	r24,MCUCR
+	in	r24,__MCUCR__
 	andi	r24,0x0f			; Set sleep mode to IDLE
 	ori	r24,0x80			; Enable the sleep system
-	out	MCUCR,r24
+	out	__MCUCR__,r24
 	sleep					; Do it!
 	ret					; Ok, we're back
 	.endfunc

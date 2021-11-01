@@ -15,7 +15,7 @@
 ;
 ; ABSTRACT
 ;
-.include "macros.inc"
+#include <avr/io.h>
 ;
 ; void _clk_int();
 ;
@@ -25,7 +25,7 @@
 	.func	_clk_int
 _clk_int:
 	push	r24					; Save the status register
-	in		r24,SREG
+	in		r24,__SREG__
 	push	r24
 	push	r25					; Save the working regs
 ;
@@ -40,7 +40,7 @@ _clk_int:
 	pop		r18
 	pop		r25					; Restore the status register
 	pop		r24
-	out		SREG,r24
+	out		__SREG__,r24
 	pop		r24
 	reti						; Return from interrupt
 	.endfunc

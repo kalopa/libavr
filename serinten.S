@@ -15,7 +15,7 @@
 ;
 ; ABSTRACT
 ;
-.include "macros.inc"
+#include <avr/io.h>
 ;
 ; void _sio_rxinton();
 ;

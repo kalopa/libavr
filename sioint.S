@@ -15,7 +15,7 @@
 ;
 ; ABSTRACT
 ;
-.include "macros.inc"
+#include <avr/io.h>
 ;
 ; void sio_in();
 ;
@@ -25,7 +25,7 @@
 	.func	sio_in
 sio_in:
 	push	r24					; Save the status register
-	in		r24,SREG
+	in		r24,__SREG__
 	push	r24
 	push	r25
 	push	r26
@@ -60,7 +60,7 @@ sio_in:
 	.func	sio_out
 sio_out:
 	push	r24					; Save the status register
-	in		r24,SREG
+	in		r24,__SREG__
 	push	r24
 	push	r25
 	push	r26
@@ -88,7 +88,7 @@ siol1:
 	pop		r26
 	pop		r25					; Restore the status register
 	pop		r24
-	out		SREG,r24
+	out		__SREG__,r24
 	pop		r24
 	reti						; Return from interrupt
 	.endfunc

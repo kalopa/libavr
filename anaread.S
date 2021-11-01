@@ -17,7 +17,7 @@
 ; Wait for the conversion to complete and read the result of an A
 ; to D conversion.
 ;
-.include "macros.inc"
+#include <avr/io.h>
 ;
 ; uint_t _ana_read();
 ;
@@ -28,8 +28,8 @@ _ana_read:
 	sbis	ADCSR,4				; Are we done?
 	rjmp	_ana_read			; No - busy loop
 ;
-	in	r24,ADCL			; Yes - read the result
-	in	r25,ADCH
+	in	r24,__ADCL__			; Yes - read the result
+	in	r25,__ADCH__
 	ret
 	.endfunc
 ;

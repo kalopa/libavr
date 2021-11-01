@@ -15,7 +15,7 @@
 ;
 ; ABSTRACT
 ;
-.include "macros.inc"
+#include <avr/io.h>
 ;
 ; void _watchdog();
 ;
@@ -34,7 +34,7 @@ _watchdog:
 	.func	_wdenable
 _wdenable:
 	push	r24
-	in	r24,SREG			; Save INTE status
+	in	r24,__SREG__			; Save INTE status
 	push	r24
 ;
 	cli					; No interrupts!
@@ -46,7 +46,7 @@ _wdenable:
 	wdr
 ;
 	pop	r24
-	out	SREG,r24
+	out	__SREG__,r24
 	pop	r24
 	ret
 	.endfunc

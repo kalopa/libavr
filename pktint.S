@@ -28,7 +28,7 @@
 ; P1: Payload byte 1
 ; P2: Payload byte 2
 ;
-.include "macros.inc"
+#include <avr/io.h>
 ;
 ; void _pkt_in();
 ;
@@ -38,7 +38,7 @@
 	.func	_pkt_in
 _pkt_in:
 	push	r24		; Save the status register
-	in	r24,SREG
+	in	r24,__SREG__
 	push	r24
 	push	r25
 ;
@@ -106,7 +106,7 @@ in4:	pop	r27
 	pop	r26
 in5:	pop	r25		; Restore the status register
 	pop	r24
-	out	SREG,r24
+	out	__SREG__,r24
 	pop	r24
 	reti			; Return from interrupt
 ;
@@ -133,7 +133,7 @@ in6:	sts	rxstate,r1
 	.func	_pkt_out
 _pkt_out:
 	push	r24		; Save the status register
-	in	r24,SREG
+	in	r24,__SREG__
 	push	r24
 	push	r25
 ;
@@ -155,7 +155,7 @@ _pkt_out:
 	cbi	UCSRB,5		; Disable TX ints
 isrout:	pop	r25		; Restore the status register
 	pop	r24
-	out	SREG,r24
+	out	__SREG__,r24
 	pop	r24
 	reti			; Return from interrupt
 ;
