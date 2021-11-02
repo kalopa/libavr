@@ -31,11 +31,11 @@
 _reset:
 	cli
 	clr		r1
-	out		__SREG__,r1
+	out		_SFR_IO_ADDR(SREG),r1
 	ldi		r16,lo8(RAMEND)				; Set up the stack pointer
 	ldi		r17,hi8(RAMEND)
-	out		__SPH__,r17
-	out		__SPL__,r16
+	out		_SFR_IO_ADDR(SPH),r17
+	out		_SFR_IO_ADDR(SPL),r16
 	call	_ioinit						; Set up the I/O ports
 ;
 ; Initialize BSS and data memory.

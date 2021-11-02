@@ -24,10 +24,10 @@
 	.func	_sleep
 _sleep:
 	sei					; Make sure interrupts are on
-	in	r24,__MCUCR__
+	in	r24,_SFR_IO_ADDR(MCUCR)
 	andi	r24,0x0f			; Set sleep mode to IDLE
 	ori	r24,0x80			; Enable the sleep system
-	out	__MCUCR__,r24
+	out	_SFR_IO_ADDR(MCUCR),r24
 	sleep					; Do it!
 	ret					; Ok, we're back
 	.endfunc
