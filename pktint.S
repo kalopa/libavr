@@ -42,7 +42,7 @@ _pkt_in:
 	push	r24
 	push	r25
 ;
-	in	r24,UDR		; Pull the character
+	in	r24,_SFR_IO_ADDR(UDR)		; Pull the character
 	cpi	r24,0xfe	; Header?
 	brne	in2		; No, look to see what then.
 ;
@@ -163,7 +163,7 @@ isrout:	pop	r25		; Restore the status register
 out1:	sts	txstate,r25	; Set the state.
 	sts	txesc,r1	; Clear the escape.
 	ldi	r25,0xfe	; Send a header byte.
-	out	UDR,r25		; Transmit it
+	out	_SFR_IO_ADDR(UDR),r25		; Transmit it
 	rjmp	isrout		; We're done (for now).
 ;
 ; In the midst of a transmission.
@@ -184,11 +184,11 @@ out2:	push	r26
 	andi	r25,0x7f	; Strip high bit.
 	st	X,r25
 	ldi	r25,0xff	; Send an escape
-	out	UDR,r25
+	out	_SFR_IO_ADDR(UDR),r25
 	rjmp	out5
 ;
 ; Regular character - send it.
-out3:	out	UDR,r25		; Transmit the byte.
+out3:	out	_SFR_IO_ADDR(UDR),r25		; Transmit the byte.
 	lds	r25,txstate	; Increment the state.
 	inc	r25
 	sts	txstate,r25

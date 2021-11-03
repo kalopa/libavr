@@ -25,11 +25,11 @@
 	.global	_ana_read
 	.func	_ana_read
 _ana_read:
-	sbis	ADCSR,4				; Are we done?
+	sbis	_SFR_IO_ADDR(ADCSR),4				; Are we done?
 	rjmp	_ana_read			; No - busy loop
 ;
-	in	r24,__ADCL__			; Yes - read the result
-	in	r25,__ADCH__
+	lds	r24,ADCL			; Yes - read the result
+	lds	r25,ADCH
 	ret
 	.endfunc
 ;

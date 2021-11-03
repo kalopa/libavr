@@ -28,7 +28,7 @@ _ana_start:
 	nop					; Breathe
 	nop
 	ldi	r24,0xd3			; ADEN, ADSC, ADPS=/128
-	out	ADCSR,r24
+	out	_SFR_IO_ADDR(ADCSR),r24
 	ret
 	.endfunc
 ;
