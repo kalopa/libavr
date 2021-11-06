@@ -40,8 +40,8 @@ OBJDUMP=$(BINDIR)/avr-objdump
 RANLIB=$(BINDIR)/avr-ranlib
 STRIP=$(BINDIR)/avr-strip
 
-ASFLAGS= -mmcu=$(DEVICE) -DDEVICE=$(DEVICE)
-CFLAGS=	-Wall -O2 -mmcu=$(DEVICE) -DDEVICE=$(DEVICE)
+ASFLAGS= -mmcu=$(DEVICE) -I$(AVR)
+CFLAGS=	-Wall -O2 -mmcu=$(DEVICE) -I$(AVR)
 LDFLAGS=-nostartfiles -L.
 LIBS=	-lavr
 
@@ -63,4 +63,4 @@ clean:
 $(LIB): $(OBJS)
 	$(AR) cru $(LIB) $?
 
-$(OBJS): $(REGVALS) libavr.h
+$(OBJS): libavr.h

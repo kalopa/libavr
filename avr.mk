@@ -34,7 +34,6 @@ STDPROM=$(AVR)/stdprom.x
 DEVICE?=atmega8
 PROG?=usbtiny
 OBJS?=	$(ASRCS:.s=.o) $(CSRCS:.c=.o)
-REGVALS=$(AVR)/$(DEVICE).inc
 
 AR=$(BINDIR)/avr-ar
 AS=$(BINDIR)/avr-as
@@ -98,5 +97,3 @@ srclist.ps: $(CSRCS) $(ASRCS)
 
 srclist.pdf: srclist.ps
 	ps2pdf srclist.ps srclist.pdf
-
-$(OBJS): $(REGVALS)
