@@ -81,7 +81,7 @@
 _bootstrap:
 	cli								; No interrupts, please!
 	clr		r1
-	out		_SFR_IO_ADDR(SREG),r1
+	out		AVR_STATUS_ADDR,r1
 	lds		r24,UCSR0B				; Get the serial port CSR
 	andi	r24,0x18				; Is it initialized?
 	brne	1f
@@ -90,8 +90,8 @@ _bootstrap:
 ; serial communications at 9600 baud (polled).
 	ldi		r16,lo8(RAMEND)			; Set up the stack pointer
 	ldi		r17,hi8(RAMEND)
-	out		_SFR_IO_ADDR(SPH),r17
-	out		_SFR_IO_ADDR(SPL),r16
+	out		AVR_STACK_POINTER_HI_ADDR,r17
+	out		AVR_STACK_POINTER_LO_ADDR,r16
 ;
 	ldi		r24,103					; Baud rate to 9600 @ 16MHz
 	sts		UBRR0H,r1

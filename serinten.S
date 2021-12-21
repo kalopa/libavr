@@ -23,7 +23,7 @@
 	.global	_sio_rxinton
 	.func	_sio_rxinton
 _sio_rxinton:
-	lds		r24,UCSR0B			; Disable RX ints
+	lds		r24,UCSR0B	; Disable RX ints
 	ori		r24,0x80
 	sts		UCSR0B,r24
 	ret
@@ -35,7 +35,7 @@ _sio_rxinton:
 	.global	_sio_rxintoff
 	.func	_sio_rxintoff
 _sio_rxintoff:
-	lds		r24,UCSR0B			; Disable RX ints
+	lds		r24,UCSR0B	; Disable RX ints
 	andi	r24,0x7f
 	sts		UCSR0B,r24
 	ret
@@ -47,7 +47,7 @@ _sio_rxintoff:
 	.global _sio_txinton
 	.func   _sio_txinton
 _sio_txinton:
-	lds		r24,UCSR0B			; Enable TX ints
+	lds		r24,UCSR0B	; Enable TX ints
 	ori		r24,0x20
 	sts		UCSR0B,r24
 	ret
@@ -59,7 +59,7 @@ _sio_txinton:
 	.global _sio_txintoff
 	.func   _sio_txintoff
 _sio_txintoff:
-	lds		r24,UCSR0B			; Disable TX ints
+	lds		r24,UCSR0B	; Disable TX ints
 	andi	r24,0xdf
 	sts		UCSR0B,r24
 	ret

@@ -34,7 +34,7 @@ _watchdog:
 	.func	_wdenable
 _wdenable:
 	push	r24
-	in	r24,_SFR_IO_ADDR(SREG)			; Save INTE status
+	in	r24,AVR_STATUS_ADDR			; Save INTE status
 	push	r24
 ;
 	cli					; No interrupts!
@@ -46,7 +46,7 @@ _wdenable:
 	wdr
 ;
 	pop	r24
-	out	_SFR_IO_ADDR(SREG),r24
+	out	AVR_STATUS_ADDR,r24
 	pop	r24
 	ret
 	.endfunc

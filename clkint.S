@@ -25,7 +25,7 @@
 	.func	_clk_int
 _clk_int:
 	push	r24					; Save the status register
-	in		r24,_SFR_IO_ADDR(SREG)
+	in		r24,AVR_STATUS_ADDR
 	push	r24
 	push	r25					; Save the working regs
 ;
@@ -40,7 +40,7 @@ _clk_int:
 	pop		r18
 	pop		r25					; Restore the status register
 	pop		r24
-	out		_SFR_IO_ADDR(SREG),r24
+	out		AVR_STATUS_ADDR,r24
 	pop		r24
 	reti						; Return from interrupt
 	.endfunc

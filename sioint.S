@@ -25,7 +25,7 @@
 	.func	sio_in
 sio_in:
 	push	r24					; Save the status register
-	in		r24,_SFR_IO_ADDR(SREG)
+	in		r24,AVR_STATUS_ADDR
 	push	r24
 	push	r25
 	push	r26
@@ -60,7 +60,7 @@ sio_in:
 	.func	sio_out
 sio_out:
 	push	r24					; Save the status register
-	in		r24,_SFR_IO_ADDR(SREG)
+	in		r24,AVR_STATUS_ADDR
 	push	r24
 	push	r25
 	push	r26
@@ -80,7 +80,9 @@ sio_out:
 	lds		r25,ohead			; Get the head pointer
 	cp		r24,r25				; Buffer empty?
 	brne	siol1				; No, continue
-	rcall	_sio_txintoff
+	lds		r24,UCSR0B	; Disable TX ints
+	andi	r24,0xdf
+	sts		UCSR0B,r24
 ;
 ; Common return routine from interrupts.
 siol1:
@@ -88,7 +90,7 @@ siol1:
 	pop		r26
 	pop		r25					; Restore the status register
 	pop		r24
-	out		_SFR_IO_ADDR(SREG),r24
+	out		AVR_STATUS_ADDR,r24
 	pop		r24
 	reti						; Return from interrupt
 	.endfunc

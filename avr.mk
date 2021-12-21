@@ -33,7 +33,7 @@ STDPROM=$(AVR)/stdprom.x
 
 DEVICE?=atmega8
 PROG?=usbtiny
-OBJS?=	$(ASRCS:.s=.o) $(CSRCS:.c=.o)
+OBJS?=	$(ASRCS:.S=.o) $(CSRCS:.c=.o)
 
 AR=$(BINDIR)/avr-ar
 AS=$(BINDIR)/avr-as
@@ -54,7 +54,7 @@ LFUSE?=0xef
 HFUSE?=0xcd
 EFUSE?=0xff
 
-ASFLAGS= -mmcu=$(DEVICE) -I$(AVR) -adhlns=$(<:%.s=%.lst)
+ASFLAGS= -mmcu=$(DEVICE) -I$(AVR) -Wa,-adhlns=$(<:%.S=%.lst)
 CFLAGS=	-Wall -O2 -mmcu=$(DEVICE) -I$(AVR) -Wa,-adhlns=$(<:%.c=%.lst)
 LDFLAGS=-nostartfiles -mmcu=$(DEVICE) -L$(AVR)
 LIBS=	-lavr
