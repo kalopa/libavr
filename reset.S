@@ -17,6 +17,10 @@
 ;
 #include <avr/io.h>
 ;
+__SP_H__ = 0x3e
+__SP_L__ = 0x3d
+__SREG__ = 0x3f
+;
 ; void _reset();
 ;
 ; To begin, initialize the stack frame, configure the timers and
@@ -31,11 +35,12 @@
 _reset:
 	cli
 	clr		r1
-	out		AVR_STATUS_ADDR,r1
+	out		__SREG__,r1
+;
 	ldi		r16,lo8(RAMEND)				; Set up the stack pointer
 	ldi		r17,hi8(RAMEND)
-	out		AVR_STACK_POINTER_HI_ADDR,r17
-	out		AVR_STACK_POINTER_LO_ADDR,r16
+	out		__SP_H__,r17
+	out		__SP_L__,r16
 	call	_ioinit						; Set up the I/O ports
 ;
 ; Initialize BSS and data memory.

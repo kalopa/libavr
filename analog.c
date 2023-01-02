@@ -29,7 +29,7 @@ analog_read(int portno)
 {
 	ADMUX = (1<<REFS0)|(portno & 0xf);
 	ADCSRA = (1<<ADEN)|(1<<ADSC)|(1<<ADIF)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
-	while ((ADCSRA & 0x10) == 0)
+	while ((ADCSRA & (1<<ADIF)) == 0)
 		;
 	return(ADC);
 }

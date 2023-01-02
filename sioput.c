@@ -16,12 +16,14 @@
  * ABSTRACT
  */
 #include <stdio.h>
+#include <avr/io.h>
 
 #include "libavr.h"
 
-uchar_t			ohead = 0;
+uchar_t				direct_mode = 0;
+uchar_t				ohead = 0;
 volatile uchar_t	otail = 0;
-uchar_t			oring[32];
+uchar_t				oring[32];
 
 /*
  * Check if the output queue is empty.
@@ -33,6 +35,16 @@ sio_oqueue_empty()
 }
 
 /*
+ * Enable direct output (no buffering). Useful for debugging a crash where
+ * the system halts with data still in the output buffer.
+ */
+void
+sio_set_direct_mode(uchar_t mode)
+{
+	direct_mode = mode;
+}
+
+/*
  * Add a character the outbound ring buffer.
  */
 void
@@ -40,6 +52,12 @@ sio_enqueue(char ch, char blockf)
 {
 	uchar_t head, tail;
 
+	if (direct_mode) {
+		while (!(UCSR0A & (1<<UDRE0)))
+			;
+		UDR0 = ch;
+		return;
+	}
 	/*
 	 * Wait for space in the ring buffer...
 	 */

@@ -63,6 +63,7 @@ int		sio_putc(char, FILE *);
 void	sio_setecho(int);
 int		sio_dequeue(char);
 void	sio_enqueue(char, char);
+void	sio_set_direct_mode(uchar_t);
 int		sio_iqueue_empty();
 int		sio_oqueue_empty();
 int		analog_read(int);

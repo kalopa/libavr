@@ -56,8 +56,8 @@ EFUSE?=0xff
 
 ASFLAGS= -mmcu=$(DEVICE) -I$(AVR) -Wa,-adhlns=$(<:%.S=%.lst)
 CFLAGS=	-Wall -O2 -mmcu=$(DEVICE) -I$(AVR) -Wa,-adhlns=$(<:%.c=%.lst)
-LDFLAGS=-nostartfiles -mmcu=$(DEVICE) -L$(AVR)
-LIBS=	-lavr
+LDFLAGS=-nostartfiles -mmcu=$(DEVICE) -L$(AVR) -Wl,--section-start=.bstrap0=0x7e00
+LIBS=	-lavr.$(DEVICE)
 
 all:	$(BIN)
 
