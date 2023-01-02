@@ -117,7 +117,7 @@ _bootstrap:
 .mloop:
 	ldi		r24,'\n'				; Output a CR/LF
 	rcall	.ser_out
-	ldi		r24,'>'				; Output a CR/LF
+	ldi		r24,'@'				; Output a CR/LF
 	rcall	.ser_out
 	rcall	.ser_in					; Read a command character
 	cpi		r24,'\r'				; Carriage-return?
@@ -327,7 +327,12 @@ _bootstrap:
 	cpi		r24,'z'+1
 	brge	1f
 	subi	r24,32
-1:	ret
+1:	cpi		r24,5					; ^E? Ignore...
+	breq		.ser_in
+	cpi		r24,'\\'				; Backslash? Reset.
+	brne		2f
+	jmp		_bootstrap
+2:	ret
 ;
 ; Output the contents of the 'Z' register
 .z_out:
