@@ -14,10 +14,15 @@
 ; Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 ;
 ; ABSTRACT
-; Using the serial port, bootstrap new firmware. For the ATMega328, the
-; application firmware runs from 0x0000 to 0x3eff and the boot loader
-; runs from 0x3f00 to 0x3fff (word addressing). This allows for 256
-; words (512 bytes) of bootstrap instructions, or four pages.
+; This bootstrap module can be used by the Kalopa AVR programmer to
+; program the flash memory over the serial port. For more info, see
+;
+; https://github.com/kalopa/kprog.git
+;
+; For the ATMega328, the application firmware runs from 0x0000 to
+; 0x3eff and the boot loader runs from 0x3f00 to 0x3fff (word
+; addressing). This allows for 256 words (512 bytes) of bootstrap
+; instructions, or four pages.
 ;
 ; BOOTSZ1=1, BOOTSZ0=1.
 ;
