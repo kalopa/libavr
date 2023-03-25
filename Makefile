@@ -40,9 +40,10 @@ OBJDUMP=$(BINDIR)/avr-objdump
 RANLIB=$(BINDIR)/avr-ranlib
 STRIP=$(BINDIR)/avr-strip
 
-#ASFLAGS= -mmcu=$(DEVICE) -I$(AVR) -Wa,-adhlns=$(<:%.S=%.lst)
-ASFLAGS= -mmcu=$(DEVICE) -I$(AVR)
-CFLAGS=	-Wall -O2 -mmcu=$(DEVICE) -I$(AVR)
+#ASFLAGS=-mmcu=$(DEVICE) -I$(AVR) -DBOOTSTRAP -Wa,-adhlns=$(<:%.S=%.lst)
+ASFLAGS=-mmcu=$(DEVICE) -I$(AVR) -DBOOTSTRAP
+#CFLAGS=-Wall -O2 -mmcu=$(DEVICE) -I$(AVR) -DBOOTSTRAP -Wa,-adhlns=$(<:%.c=%.lst)
+CFLAGS=-Wall -O2 -mmcu=$(DEVICE) -I$(AVR) -DBOOTSTRAP
 LDFLAGS=-nostartfiles -L.
 LIBS=	-lavr
 

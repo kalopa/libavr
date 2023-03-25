@@ -32,6 +32,24 @@ sio_in:
 	push	r27
 ;
 	lds		r26,UDR0			; Pull the character
+#ifdef BOOTSTRAP
+	cpi		r26,5				; Saw CTRL-E?
+	brne	1f
+	sts		_saw_ctrle,r26		; Set flag to true
+	rjmp	siol1				; Ignore the character.
+;
+$1:	cpi		r26,'\\'			; Backslash?
+	brne	2f
+;
+	lds		r24,_saw_ctrle		; Get flag state
+	tst		r24					; Set?
+	brne	2f
+	jmp		_bootstrap			; Run the bootstrap code!
+;
+$2:	ldi		r24,0				; Clear the flag
+	sts		_saw_ctrle,r24
+;
+#endif
 	lds		r24,ihead			; Get head & tail
 	lds		r25,itail
 	inc		r24
@@ -94,5 +112,12 @@ siol1:
 	pop		r24
 	reti						; Return from interrupt
 	.endfunc
+;
+; Look for ^E\ in order to enter bootstrap mode.
+#ifdef BOOTSTRAP
+	.section .bss
+_saw_ctrle:
+	.zero	1
+#endif
 ;
 ; Fin.
