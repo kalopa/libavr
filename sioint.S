@@ -38,19 +38,18 @@ sio_in:
 	sts		_saw_ctrle,r26		; Set flag to true
 	rjmp	siol1				; Ignore the character.
 ;
-$1:	cpi		r26,'\\'			; Backslash?
-	brne	2f
-;
-	lds		r24,_saw_ctrle		; Get flag state
+1:	lds		r24,_saw_ctrle		; Get flag state
 	tst		r24					; Set?
+	breq	2f
+;
+	ldi		r24,0				; Clear the flag
+	sts		_saw_ctrle,r24
+	cpi		r26,'\\'			; Backslash?
 	brne	2f
 	jmp		_bootstrap			; Run the bootstrap code!
 ;
-$2:	ldi		r24,0				; Clear the flag
-	sts		_saw_ctrle,r24
-;
 #endif
-	lds		r24,ihead			; Get head & tail
+2:	lds		r24,ihead			; Get head & tail
 	lds		r25,itail
 	inc		r24
 	andi	r24,31

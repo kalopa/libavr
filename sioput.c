@@ -26,6 +26,16 @@ volatile uchar_t	otail = 0;
 uchar_t				oring[32];
 
 /*
+ * Wait for the output queue to drai.
+ */
+void
+sio_oqueue_drain()
+{
+	while (ohead != otail)
+		;
+}
+
+/*
  * Check if the output queue is empty.
  */
 int

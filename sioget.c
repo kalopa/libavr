@@ -25,6 +25,16 @@ uchar_t			iring[32];
 uchar_t			echof = 0;
 
 /*
+ * Wait for the input queue to drain.
+ */
+void
+sio_iqueue_drain()
+{
+	while (ihead != itail)
+		;
+}
+
+/*
  * Check if the input queue is empty.
  */
 int
