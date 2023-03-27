@@ -24,11 +24,16 @@
 	.func	_sleep
 _sleep:
 	sei					; Make sure interrupts are on
-	in	r24,_SFR_IO_ADDR(MCUCR)
-	andi	r24,0x0f			; Set sleep mode to IDLE
-	ori	r24,0x80			; Enable the sleep system
-	out	_SFR_IO_ADDR(MCUCR),r24
+; FIXME: The code below is for the ATMega8
+;	in	r24,_SFR_IO_ADDR(MCUCR)
+;	andi	r24,0x0f			; Set sleep mode to IDLE
+;	ori	r24,0x80			; Enable the sleep system
+;	out	_SFR_IO_ADDR(MCUCR),r24
+	ldi	r24,0x01			; Enable sleep mode (IDLE)
+	out	_SFR_IO_ADDR(SMCR),r24
 	sleep					; Do it!
+	ldi	r24,0				; Disable sleep mode
+	out	_SFR_IO_ADDR(SMCR),r24
 	ret					; Ok, we're back
 	.endfunc
 ;
