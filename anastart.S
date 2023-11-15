@@ -24,11 +24,11 @@
 	.global	_ana_start
 	.func	_ana_start
 _ana_start:
-	sts	ADMUX,r24			; Set the multiplexors
-	nop					; Breathe
+	sts		ADMUX,r24			; Set the multiplexors
+	nop							; Breathe
 	nop
-	ldi	r24,0xd3			; ADEN, ADSC, ADPS=/128
-	out	_SFR_IO_ADDR(ADCSR),r24
+	ldi		r24,0xd3			; ADEN, ADSC, ADPS=/128
+	out		_SFR_IO_ADDR(ADCSR),r24
 	ret
 	.endfunc
 ;

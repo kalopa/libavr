@@ -17,10 +17,6 @@
 ;
 #include <avr/io.h>
 ;
-__SP_H__ = 0x3e
-__SP_L__ = 0x3d
-__SREG__ = 0x3f
-;
 ; void _reset();
 ;
 ; To begin, initialize the stack frame, configure the timers and
@@ -35,13 +31,17 @@ __SREG__ = 0x3f
 _reset:
 	cli
 	clr		r1
-	out		__SREG__,r1
+	out		_SFR_IO_ADDR(SREG),r1
 ;
 	ldi		r16,lo8(RAMEND)				; Set up the stack pointer
 	ldi		r17,hi8(RAMEND)
-	out		__SP_H__,r17
-	out		__SP_L__,r16
+	out		_SFR_IO_ADDR(SPH),r17
+	out		_SFR_IO_ADDR(SPL),r16
+#ifdef __AVR_HAVE_JMP_CALL__
 	call	_ioinit						; Set up the I/O ports
+#else
+	rcall	_ioinit						; Set up the I/O ports
+#endif
 ;
 ; Initialize BSS and data memory.
 	ldi		r17,hi8(__data_end)			; End of data block
@@ -55,16 +55,20 @@ _reset:
 	st		x+,r0						; Save in [X]
 2:	cpi		r26,lo8(__data_end)			; We done yet?
 	cpc		r27,r17
-	brne	1b						; No, copy some more
+	brne	1b							; No, copy some more
 	ldi		r17,hi8(__bss_end)			; Point to end of memory
 	rjmp	4f
 3:	st		x+,r1						; Clear memory
 4:	cpi		r26,lo8(__bss_end)			; We done yet?
 	cpc		r27,r17
-	brne	3b						; No, keep trucking
+	brne	3b							; No, keep trucking
 ;
 ; We're ready for prime time - call the C code.
+#ifdef __AVR_HAVE_JMP_CALL__
 	call	main						; Call the main routine
+#else
+	rcall	main						; Call the main routine
+#endif
 	rjmp	_reset
 	.endfunc
 ;

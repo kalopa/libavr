@@ -16,6 +16,7 @@
 ; ABSTRACT
 ;
 #include <avr/io.h>
+#include "oldregs.h"
 ;
 ; void _sio_rxinton();
 ;

@@ -38,7 +38,7 @@
 ;	Pbb		Program a block (bb) of flash memory
 ;	R		Reset the system (jump to zero)
 ;
-; The argument to the dump command is the ubber byte of the address. So
+; The argument to the dump command is the upper byte of the address. So
 ; D7F will dump from 7f00 through 7fff. The argument to the Erase and
 ; Program commands is a block number in the range 00->FF, so they work
 ; on blocks of 128 bytes. As the upload command only accepts 16 bytes,
@@ -76,6 +76,7 @@
 ; line.
 ;
 #include <avr/io.h>
+#include "oldregs.h"
 ;
 ; void _bootstrap();
 ;
@@ -86,7 +87,7 @@
 _bootstrap:
 	cli								; No interrupts, please!
 	clr		r1
-	out		AVR_STATUS_ADDR,r1
+	out		_SFR_IO_ADDR(SREG),r1
 	lds		r24,UCSR0B				; Get the serial port CSR
 	andi	r24,0x18				; Is it initialized?
 	brne	1f
@@ -95,8 +96,8 @@ _bootstrap:
 ; serial communications at 9600 baud (polled).
 	ldi		r16,lo8(RAMEND)			; Set up the stack pointer
 	ldi		r17,hi8(RAMEND)
-	out		AVR_STACK_POINTER_HI_ADDR,r17
-	out		AVR_STACK_POINTER_LO_ADDR,r16
+	out		_SFR_IO_ADDR(SPH),r17
+	out		_SFR_IO_ADDR(SPL),r16
 ;
 	ldi		r24,103					; Baud rate to 9600 @ 16MHz
 	sts		UBRR0H,r1
@@ -131,7 +132,11 @@ _bootstrap:
 ; Reset the board?
 	cpi		r24,'R'					; Reset command?
 	brne	.chkd					; No, try the next option
+#ifdef __AVR_HAVE_JMP_CALL__
 	jmp		0						; Easy - just go to the zero addr
+#else
+	rjmp	0						; Easy - just go to the zero addr
+#endif
 ;
 ; Dump?
 .chkd:
@@ -336,7 +341,11 @@ _bootstrap:
 	breq		.ser_in
 	cpi		r24,'\\'				; Backslash? Reset.
 	brne		2f
+#ifdef __AVR_HAVE_JMP_CALL__
 	jmp		_bootstrap
+#else
+	rjmp	_bootstrap
+#endif
 2:	ret
 ;
 ; Output the contents of the 'Z' register

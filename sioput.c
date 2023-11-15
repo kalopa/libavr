@@ -19,6 +19,7 @@
 #include <avr/io.h>
 
 #include "libavr.h"
+#include "oldregs.h"
 
 uchar_t				direct_mode = 0;
 uchar_t				ohead = 0;

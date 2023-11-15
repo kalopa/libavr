@@ -60,7 +60,7 @@ LIB=	libavr.$(DEVICE).a
 all:	$(LIB)
 
 clean:
-	rm -f $(LIB) $(OBJS) *.lst errs
+	rm -f $(OBJS) $(LIB) *.lst errs
 
 $(LIB): $(OBJS)
 	$(AR) cru $(LIB) $?

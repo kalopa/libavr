@@ -25,9 +25,10 @@
 _setled:
 	tst	r24				; LED on or off?
 	breq	sl1
-	cbi	_SFR_IO_ADDR(PORTC),3				; Turn on the LED
+	cbi		_SFR_IO_ADDR(PORTC),3				; Turn on the LED
 	ret
-sl1:	sbi	_SFR_IO_ADDR(PORTC),3				; Turn off the LED
+sl1:
+	sbi		_SFR_IO_ADDR(PORTC),3				; Turn off the LED
 	ret
 	.endfunc
 ;

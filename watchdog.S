@@ -23,7 +23,7 @@
 	.global	_watchdog
 	.func	_watchdog
 _watchdog:
-	wdr					; Ping the watchdog timer
+	wdr								; Ping the watchdog timer
 	ret
 	.endfunc
 ;
@@ -34,20 +34,20 @@ _watchdog:
 	.func	_wdenable
 _wdenable:
 	push	r24
-	in	r24,AVR_STATUS_ADDR			; Save INTE status
+	in		r24,_SFR_IO_ADDR(SREG)	; Save INTE status
 	push	r24
 ;
-	cli					; No interrupts!
-	wdr					; Clear the watchdog
-	ldi	r24,0x1f			; WDCE, WDE, WDP=2048k
-	out	WDTCR,r24
-	ldi	r24,0x0f			; WDE, WDP=2048k
-	out	WDTCR,r24
+	cli								; No interrupts!
+	wdr								; Clear the watchdog
+	ldi		r24,0x1f				; WDCE, WDE, WDP=2048k
+	out		_SFR_IO_ADDR(WDTCR),r24
+	ldi		r24,0x0f				; WDE, WDP=2048k
+	out		_SFR_IO_ADDR(WDTCR),r24
 	wdr
 ;
-	pop	r24
-	out	AVR_STATUS_ADDR,r24
-	pop	r24
+	pop		r24
+	out		_SFR_IO_ADDR(SREG),r24
+	pop		r24
 	ret
 	.endfunc
 ;

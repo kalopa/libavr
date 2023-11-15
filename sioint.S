@@ -16,6 +16,7 @@
 ; ABSTRACT
 ;
 #include <avr/io.h>
+#include "oldregs.h"
 ;
 ; void sio_in();
 ;
@@ -25,7 +26,7 @@
 	.func	sio_in
 sio_in:
 	push	r24					; Save the status register
-	in		r24,AVR_STATUS_ADDR
+	in		r24,_SFR_IO_ADDR(SREG)
 	push	r24
 	push	r25
 	push	r26
@@ -46,7 +47,11 @@ sio_in:
 	sts		_saw_ctrle,r24
 	cpi		r26,'\\'			; Backslash?
 	brne	2f
+#ifdef __AVR_HAVE_JMP_CALL__
 	jmp		_bootstrap			; Run the bootstrap code!
+#else
+	rjmp	_bootstrap			; Run the bootstrap code!
+#endif
 ;
 #endif
 2:	lds		r24,ihead			; Get head & tail
@@ -77,7 +82,7 @@ sio_in:
 	.func	sio_out
 sio_out:
 	push	r24					; Save the status register
-	in		r24,AVR_STATUS_ADDR
+	in		r24,_SFR_IO_ADDR(SREG)
 	push	r24
 	push	r25
 	push	r26
@@ -107,7 +112,7 @@ siol1:
 	pop		r26
 	pop		r25					; Restore the status register
 	pop		r24
-	out		AVR_STATUS_ADDR,r24
+	out		_SFR_IO_ADDR(SREG),r24
 	pop		r24
 	reti						; Return from interrupt
 	.endfunc

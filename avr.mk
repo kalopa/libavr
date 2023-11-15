@@ -31,7 +31,6 @@ endif
 AVR?=$(HOME)/libavr
 STDPROM=$(AVR)/stdprom.x
 
-DEVICE?=atmega8
 PROG?=usbtiny
 OBJS?=	$(ASRCS:.S=.o) $(CSRCS:.c=.o)
 
@@ -49,23 +48,43 @@ STRIP=$(BINDIR)/avr-strip
 
 FIRMWARE?=firmware.hex
 
+ifndef DEVICE
+$(error $$DEVICE must be defined - one of atmega8,atmega328p,etc)
+endif
+
 # https://eleccelerator.com/fusecalc/fusecalc.php
+ifeq ($(DEVICE),atmega328p)
+BSMEMORY=0x7e00
 LFUSE?=0xef
 HFUSE?=0xcd
 EFUSE?=0xff
+else
+BSMEMORY=0x1e00
+LFUSE?=0xef
+HFUSE?=0xc5
+EFUSE?=0xff
+endif
 
-ASFLAGS= -mmcu=$(DEVICE) -I$(AVR) -Wa,-adhlns=$(<:%.S=%.lst)
-CFLAGS=	-Wall -O2 -mmcu=$(DEVICE) -I$(AVR) -Wa,-adhlns=$(<:%.c=%.lst)
-LDFLAGS=-nostartfiles -mmcu=$(DEVICE) -L$(AVR) -Wl,--section-start=.bstrap0=0x7e00
+ASFLAGS= -mmcu=$(DEVICE) -I$(AVR)
+CFLAGS=	-Wall -O2 -mmcu=$(DEVICE) -I$(AVR)
+LDFLAGS=-nostartfiles -u __vectors -mmcu=$(DEVICE) -L$(AVR) -Wl,--section-start=.bstrap0=$(BSMEMORY)
 LIBS=	-lavr.$(DEVICE)
 
 all:	$(BIN)
 
-clean:	do_clean
+clean:
+	rm -f $(BIN) $(OBJS) $(FIRMWARE) \
+	*.lst srclist.ps srclist.pdf errs
 
-program: do_program
+program: $(FIRMWARE)
+	sudo avrdude -p $(DEVICE) -c $(PROG) -U flash:w:$(FIRMWARE):i
+	rm $(FIRMWARE)
 
-erase:	do_erase
+fuses:
+	sudo avrdude -p $(DEVICE) -c $(PROG) -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U efuse:w:$(EFUSE):m
+
+erase:
+	sudo avrdude -p $(DEVICE) -c $(PROG) -e
 
 tags:	$(ASRCS) $(CSRCS)
 	ctags $(CSRCS)
@@ -74,20 +93,6 @@ tags:	$(ASRCS) $(CSRCS)
 	mv tags- tags
 
 docs:	srclist.pdf
-
-do_clean:
-	rm -f $(BIN) $(OBJS) $(FIRMWARE) \
-	*.lst srclist.ps srclist.pdf errs
-
-do_erase:
-	sudo avrdude -p $(DEVICE) -c $(PROG) -e
-
-do_program: $(FIRMWARE)
-	sudo avrdude -p $(DEVICE) -c $(PROG) -U flash:w:$(FIRMWARE):i
-	rm $(FIRMWARE)
-
-do_fuses:
-	sudo avrdude -p $(DEVICE) -c $(PROG) -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U efuse:w:$(EFUSE):m
 
 $(FIRMWARE): $(BIN)
 	avr-objcopy -O ihex $(BIN) $(FIRMWARE)

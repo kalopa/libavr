@@ -25,7 +25,7 @@
 	.func	_clk_int
 _clk_int:
 	push	r24					; Save the status register
-	in		r24,AVR_STATUS_ADDR
+	in		r24,_SFR_IO_ADDR(SREG)
 	push	r24
 	push	r25					; Save the working regs
 ;
@@ -33,14 +33,18 @@ _clk_int:
 	push	r19
 	push	r26					; Save the temporary regs
 	push	r27					; Save the temporary regs
+#ifdef __AVR_HAVE_JMP_CALL__
+	call	clocktick			; Call the main clock tick
+#else
 	rcall	clocktick			; Call the main clock tick
+#endif
 	pop		r27					; Restore the registers
 	pop		r26
 	pop		r19
 	pop		r18
 	pop		r25					; Restore the status register
 	pop		r24
-	out		AVR_STATUS_ADDR,r24
+	out		_SFR_IO_ADDR(SREG),r24
 	pop		r24
 	reti						; Return from interrupt
 	.endfunc
