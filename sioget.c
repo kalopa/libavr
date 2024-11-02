@@ -56,6 +56,7 @@ sio_dequeue(char blockf)
 	 */
 	do {
 		head = ihead;
+		_watchdog();
 	} while (head == itail && blockf);
 	cli();
 	if (head == itail)

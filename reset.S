@@ -75,6 +75,7 @@ _reset:
 	.section .init4,"ax",@progbits
 ;
 ; Some useful (low level) variables...
+	.word	RAMEND
 	.weak	__heap_end
 	.weak	__stack
 	.set	__heap_end,0

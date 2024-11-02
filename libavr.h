@@ -68,6 +68,8 @@ void	sio_iqueue_drain();
 void	sio_oqueue_drain();
 int		sio_iqueue_empty();
 int		sio_oqueue_empty();
+void	spi_init();
+int		spi_byte(uchar_t);
 int		analog_read(int);
 
 int		pidcalc(struct pid *, int);

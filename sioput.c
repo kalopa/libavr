@@ -75,6 +75,7 @@ sio_enqueue(char ch, char blockf)
 	head = (ohead + 1) & 31;
 	do {
 		tail = otail;
+		_watchdog();
 	} while (head == tail && blockf);
 	cli();
 	if (head != tail) {

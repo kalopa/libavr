@@ -19,7 +19,7 @@
 OS?=$(shell uname)
 
 ifeq (${OS}, Darwin)
-	BINDIR=/usr/local/bin
+	BINDIR=/opt/homebrew/bin
 else
 ifeq (${OS}, FreeBSD)
 	BINDIR=/usr/local/bin
@@ -67,7 +67,8 @@ endif
 
 ASFLAGS= -mmcu=$(DEVICE) -I$(AVR)
 CFLAGS=	-Wall -O2 -mmcu=$(DEVICE) -I$(AVR)
-LDFLAGS=-nostartfiles -u __vectors -mmcu=$(DEVICE) -L$(AVR) -Wl,--section-start=.bstrap0=$(BSMEMORY)
+#LDFLAGS=-nostartfiles -u __vectors -mmcu=$(DEVICE) -L$(AVR) -Wl,--section-start=.bstrap0=$(BSMEMORY)
+LDFLAGS=-nostartfiles -mmcu=$(DEVICE) -L$(AVR) -Wl,--section-start=.bstrap0=$(BSMEMORY)
 LIBS=	-lavr.$(DEVICE)
 
 all:	$(BIN)

@@ -40,20 +40,17 @@ OBJDUMP=$(BINDIR)/avr-objdump
 RANLIB=$(BINDIR)/avr-ranlib
 STRIP=$(BINDIR)/avr-strip
 
-#ASFLAGS=-mmcu=$(DEVICE) -I$(AVR) -DBOOTSTRAP -Wa,-adhlns=$(<:%.S=%.lst)
 ASFLAGS=-mmcu=$(DEVICE) -I$(AVR) -DBOOTSTRAP
-#CFLAGS=-Wall -O2 -mmcu=$(DEVICE) -I$(AVR) -DBOOTSTRAP -Wa,-adhlns=$(<:%.c=%.lst)
 CFLAGS=-Wall -O2 -mmcu=$(DEVICE) -I$(AVR) -DBOOTSTRAP
 LDFLAGS=-nostartfiles -L.
 LIBS=	-lavr
 
-ASRCS=	reset.S \
-	clkint.S watchdog.S sleep.S \
+ASRCS=	reset.S watchdog.S wdenable.S \
+	clkint.S sleep.S setled.S \
 	serinten.S sioint.S pktint.S \
-	anastart.S anaread.S \
-	setled.S \
+	spi_irq.S anastart.S anaread.S \
 	bootstrap.S
-CSRCS=	event.c sioget.c sioput.c analog.c pid.c
+CSRCS=	event.c sioget.c sioput.c spi.c analog.c pid.c
 OBJS=	$(ASRCS:.S=.o) $(CSRCS:.c=.o)
 LIB=	libavr.$(DEVICE).a
 

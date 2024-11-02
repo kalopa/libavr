@@ -88,6 +88,8 @@ _bootstrap:
 	cli								; No interrupts, please!
 	clr		r1
 	out		_SFR_IO_ADDR(SREG),r1
+	in		r31,_SFR_IO_ADDR(SPH)	; Save the stack pointer (for debug)
+	in		r30,_SFR_IO_ADDR(SPL)
 	lds		r24,UCSR0B				; Get the serial port CSR
 	andi	r24,0x18				; Is it initialized?
 	brne	1f
@@ -107,6 +109,7 @@ _bootstrap:
 ;
 1:	ldi		r24,0x18				; RXEN0|TXEN0
 	sts		UCSR0B,r24
+	rcall	.z_out
 ;
 	ldi		r31,hi8(_bstrap_msg)	; Point to start message
 	ldi		r30,lo8(_bstrap_msg)
@@ -263,6 +266,7 @@ _bootstrap:
 	rcall	.do_spm
 	adiw	r30,2					; Next word address
 	dec		r16						; Decrement count
+	wdr
 	brne	1b						; Keep going until page done
 ;
 	pop		r31						; Restore memort address
@@ -329,6 +333,7 @@ _bootstrap:
 ; Input a character from the serial port to r24.
 .ser_in:
 	lds		r24,UCSR0A				; Get the UART status
+	wdr							; Kick the watchdog timer
 	sbrs	r24,7					; RXC0 set?
 	rjmp	.ser_in					; No. Try again.
 	lds		r24,UDR0				; Receive the character
@@ -376,6 +381,7 @@ _bootstrap:
 	ldi		r24,'\n'				; Now output the LF
 ;
 1:	lds		r25,UCSR0A				; Get the UART status
+	wdr							; Kick the watchdog timer
 	sbrs	r25,5					; UDRE0 set?
 	rjmp	1b						; No. Try again.
 	sts		UDR0,r24				; Send the character
@@ -383,7 +389,7 @@ _bootstrap:
 ;
 	.global	_bstrap_msg
 _bstrap_msg:
-	.string	"BOOTv2"
+	.string	"\nBOOTv2"
 	.endfunc
 ;
 ; Fin

@@ -17,45 +17,28 @@
 ;
 #include <avr/io.h>
 ;
-; void _clk_int();
+; void _wdenable();
 ;
-; Clock timer tick. Just call the main C routine.
-	.section .init6,"ax",@progbits
-	.global	_clk_int
-	.func	_clk_int
-_clk_int:
-	push	r24					; Save the status register
-	in		r24,_SFR_IO_ADDR(SREG)
+; Enable the watchdog timer.
+	.global	_wdenable
+	.func	_wdenable
+_wdenable:
 	push	r24
-	push	r25
+	in		r24,_SFR_IO_ADDR(SREG)	; Save INTE status
+	push	r24
 ;
-	push	r18					; Save the temporary regs
-	push	r19
-	push	r20
-	push	r21
-	push	r26
-	push	r27
-	push	r30
-	push	r31
-#ifdef __AVR_HAVE_JMP_CALL__
-	call	clocktick			; Call the main clock tick
-#else
-	rcall	clocktick			; Call the main clock tick
-#endif
-	pop		r31					; Restore the registers
-	pop		r30
-	pop		r27
-	pop		r26
-	pop		r21
-	pop		r20
-	pop		r19
-	pop		r18
+	cli								; No interrupts!
+	wdr								; Clear the watchdog
+	ldi		r24,0x1f				; WDCE, WDE, WDP=2048k
+	out		_SFR_IO_ADDR(WDTCR),r24
+	ldi		r24,0x0f				; WDE, WDP=2048k
+	out		_SFR_IO_ADDR(WDTCR),r24
+	wdr
 ;
-	pop		r25					; Restore the status register
 	pop		r24
 	out		_SFR_IO_ADDR(SREG),r24
 	pop		r24
-	reti						; Return from interrupt
+	ret
 	.endfunc
 ;
-; Fin.
+; Fin
