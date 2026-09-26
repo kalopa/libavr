@@ -32,32 +32,6 @@ uchar_t			iring[32];
 uchar_t			echof = 0;
 
 /*
- * Remove a character from the inbound ring buffer.
- */
-int
-sio_dequeue(char blockf)
-{
-	uchar_t ch;
-
-	/*
-	 * Check the ring buffer, and early-out if blockf isn't set and
-	 * the buffer is empty.
-	 */
-	if (blockf == 0 && ihead == itail)
-		return(0);
-	/*
-	 * Wait for a character the ring buffer...
-	 */
-	sei();
-	_sio_rxinton();
-	while (ihead == itail && blockf)
-		_watchdog();
-	ch = iring[itail];
-	itail = (itail + 1) & 31;
-	return(ch);
-}
-
-/*
  * Interface for AVR library which wants a libc-style fgetc. Also cook
  * the input and echo as appropriate.
  */
@@ -71,15 +45,6 @@ sio_getc(FILE *fp)
 	if (echof)
 		sio_putc(ch, fp);
 	return(ch);
-}
-
-/*
- *
- */
-void
-sio_setecho(int val)
-{
-	echof = val;
 }
 
 /*
@@ -124,21 +89,6 @@ sio_dequeue(char blockf)
 		itail = (itail + 1) & 31;
 	}
 	sei();
-	return(ch);
-}
-
-/*
- *
- */
-int
-sio_getc(FILE *fp)
-{
-	char ch;
-
-	if ((ch = sio_dequeue(1)) == '\r')
-		ch = '\n';
-	if (echof)
-		sio_putc(ch, NULL);
 	return(ch);
 }
 
