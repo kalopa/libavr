@@ -241,6 +241,9 @@ _bootstrap:
 	sts		UCSR0B,r24
 #endif
 	rcall	.z_out					; Show the stack pointer
+=======
+	rcall	.z_out
+>>>>>>> f88507f4c06b9228096e1f6af4c266b0efabddd5
 ;
 	ldi		r31,hi8(_bstrap_msg)	; Point to start message
 	ldi		r30,lo8(_bstrap_msg)

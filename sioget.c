@@ -100,3 +100,53 @@ sio_iqueue_empty()
 {
 	return(ihead == itail);
 }
+
+/*
+ * Add a character the outbound ring buffer.
+ */
+int
+sio_dequeue(char blockf)
+{
+	uchar_t ch, head;
+
+	/*
+	 * Wait for a character the ring buffer...
+	 */
+	do {
+		head = ihead;
+		_watchdog();
+	} while (head == itail && blockf);
+	cli();
+	if (head == itail)
+		ch = 0;
+	else {
+		ch = iring[itail];
+		itail = (itail + 1) & 31;
+	}
+	sei();
+	return(ch);
+}
+
+/*
+ *
+ */
+int
+sio_getc(FILE *fp)
+{
+	char ch;
+
+	if ((ch = sio_dequeue(1)) == '\r')
+		ch = '\n';
+	if (echof)
+		sio_putc(ch, NULL);
+	return(ch);
+}
+
+/*
+ *
+ */
+void
+sio_setecho(int val)
+{
+	echof = val;
+}

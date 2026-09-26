@@ -125,6 +125,37 @@ sio_set_direct_mode(uchar_t mode)
 /*
  * Return the status of the output queue.  True means empty.
  */
+void
+sio_enqueue(char ch, char blockf)
+{
+	uchar_t head, tail;
+
+	if (direct_mode) {
+		while (!(UCSR0A & (1<<UDRE0)))
+			;
+		UDR0 = ch;
+		return;
+	}
+	/*
+	 * Wait for space in the ring buffer...
+	 */
+	head = (ohead + 1) & 31;
+	do {
+		tail = otail;
+		_watchdog();
+	} while (head == tail && blockf);
+	cli();
+	if (head != tail) {
+		oring[ohead] = ch;
+		ohead = (ohead + 1) & 31;
+	}
+	_sio_txinton();
+	sei();
+}
+
+/*
+ *
+ */
 int
 sio_oqueue_empty()
 {
