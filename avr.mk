@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2007-21, Kalopa Robotics Limited.  All rights reserved.
+# Copyright (c) 2007-26, Kalopa Robotics Limited.  All rights reserved.
 #
 # This is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -19,13 +19,9 @@
 OS?=$(shell uname)
 
 ifeq (${OS}, Darwin)
-	BINDIR=/usr/local/bin
+	BINDIR=/opt/homebrew/bin
 else
-ifeq (${OS}, FreeBSD)
 	BINDIR=/usr/local/bin
-else
-	BINDIR=/usr/bin
-endif
 endif
 
 AVR?=$(HOME)/libavr
@@ -53,21 +49,36 @@ $(error $$DEVICE must be defined - one of atmega8,atmega328p,etc)
 endif
 
 # https://eleccelerator.com/fusecalc/fusecalc.php
+#
+# The bootstrap code (.bstrap0) lives at the top of flash on the classic
+# ATmega parts. On the tinyAVR 0/1/2-series (e.g. attiny1626) it lives in
+# the BOOT section at the bottom of flash, whose size is set by the
+# BOOTEND fuse in 256-byte units, and the application is linked to start
+# immediately after it. See bootstrap.S for the gory details.
 ifeq ($(DEVICE),atmega328p)
 BSMEMORY=0x7e00
 LFUSE?=0xef
 HFUSE?=0xcd
 EFUSE?=0xff
+BSLDFLAGS=-Wl,--section-start=.bstrap0=$(BSMEMORY)
+else ifeq ($(DEVICE),attiny1626)
+BOOTEND?=2
+BSMEMORY=0x0000
+APPSTART=$(shell printf 0x%04x $$(($(BOOTEND) * 256)))
+ASFLAGS+= -DBSTRAP_BOOTEND=$(BOOTEND)
+BSLDFLAGS=-Wl,--section-start=.bstrap0=$(BSMEMORY) -Wl,--section-start=.text=$(APPSTART)
 else
 BSMEMORY=0x1e00
 LFUSE?=0xef
 HFUSE?=0xc5
 EFUSE?=0xff
+BSLDFLAGS=-Wl,--section-start=.bstrap0=$(BSMEMORY)
 endif
 
-ASFLAGS= -mmcu=$(DEVICE) -I$(AVR)
-CFLAGS=	-Wall -O2 -mmcu=$(DEVICE) -I$(AVR)
-LDFLAGS=-nostartfiles -u __vectors -mmcu=$(DEVICE) -L$(AVR) -Wl,--section-start=.bstrap0=$(BSMEMORY)
+ASFLAGS+= -mmcu=$(DEVICE) -I$(AVR)
+CFLAGS=	-Wall -Os -mmcu=$(DEVICE) -I$(AVR)
+#LDFLAGS=-nostartfiles -u __vectors -mmcu=$(DEVICE) -L$(AVR) $(BSLDFLAGS)
+LDFLAGS=-nostartfiles -mmcu=$(DEVICE) -L$(AVR) $(BSLDFLAGS)
 LIBS=	-lavr.$(DEVICE)
 
 all:	$(BIN)
@@ -81,7 +92,11 @@ program: $(FIRMWARE)
 	rm $(FIRMWARE)
 
 fuses:
+ifeq ($(DEVICE),attiny1626)
+	sudo avrdude -p $(DEVICE) -c $(PROG) -U bootend:w:$(BOOTEND):m
+else
 	sudo avrdude -p $(DEVICE) -c $(PROG) -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U efuse:w:$(EFUSE):m
+endif
 
 erase:
 	sudo avrdude -p $(DEVICE) -c $(PROG) -e

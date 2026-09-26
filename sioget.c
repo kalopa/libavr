@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-21, Kalopa Robotics Limited.  All rights reserved.
+ * Copyright (c) 2007-26, Kalopa Robotics Limited.  All rights reserved.
  *
  * This is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -14,6 +14,13 @@
  * Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * ABSTRACT
+ * A precis on ring buffers. Each one is 32 bytes long (see below). The
+ * head and tail pointers are unsigned chars. This code can directly
+ * manipulate :itail and the ISR can manipulate :ihead. If :ihead ==
+ * :itail then the buffer is empty. If :ihead+1 (modulo 32) is equal
+ * to :itail then the buffer is full. In blocking mode, if :ihead ==
+ * :itail then there's no data and we should wait. Otherwise, pull the
+ * character at :itail and return that. See sioput.c as well.
  */
 #include <stdio.h>
 
@@ -23,6 +30,57 @@ volatile uchar_t	ihead = 0;
 uchar_t			itail = 0;
 uchar_t			iring[32];
 uchar_t			echof = 0;
+
+/*
+ * Remove a character from the inbound ring buffer.
+ */
+int
+sio_dequeue(char blockf)
+{
+	uchar_t ch;
+
+	/*
+	 * Check the ring buffer, and early-out if blockf isn't set and
+	 * the buffer is empty.
+	 */
+	if (blockf == 0 && ihead == itail)
+		return(0);
+	/*
+	 * Wait for a character the ring buffer...
+	 */
+	sei();
+	_sio_rxinton();
+	while (ihead == itail && blockf)
+		_watchdog();
+	ch = iring[itail];
+	itail = (itail + 1) & 31;
+	return(ch);
+}
+
+/*
+ * Interface for AVR library which wants a libc-style fgetc. Also cook
+ * the input and echo as appropriate.
+ */
+int
+sio_getc(FILE *fp)
+{
+	char ch;
+
+	if ((ch = sio_dequeue(1)) == '\r')
+		ch = '\n';
+	if (echof)
+		sio_putc(ch, fp);
+	return(ch);
+}
+
+/*
+ *
+ */
+void
+sio_setecho(int val)
+{
+	echof = val;
+}
 
 /*
  * Wait for the input queue to drain.
@@ -41,53 +99,4 @@ int
 sio_iqueue_empty()
 {
 	return(ihead == itail);
-}
-
-/*
- * Add a character the outbound ring buffer.
- */
-int
-sio_dequeue(char blockf)
-{
-	uchar_t ch, head;
-
-	/*
-	 * Wait for a character the ring buffer...
-	 */
-	do {
-		head = ihead;
-	} while (head == itail && blockf);
-	cli();
-	if (head == itail)
-		ch = 0;
-	else {
-		ch = iring[itail];
-		itail = (itail + 1) & 31;
-	}
-	sei();
-	return(ch);
-}
-
-/*
- *
- */
-int
-sio_getc(FILE *fp)
-{
-	char ch;
-
-	if ((ch = sio_dequeue(1)) == '\r')
-		ch = '\n';
-	if (echof)
-		sio_putc(ch, NULL);
-	return(ch);
-}
-
-/*
- *
- */
-void
-sio_setecho(int val)
-{
-	echof = val;
 }

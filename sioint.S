@@ -1,5 +1,5 @@
 ;
-; Copyright (c) 2007-21, Kalopa Robotics Limited.  All rights reserved.
+; Copyright (c) 2007-26, Kalopa Robotics Limited.  All rights reserved.
 ;
 ; This is free software; you can redistribute it and/or modify it
 ; under the terms of the GNU General Public License as published by
@@ -14,6 +14,13 @@
 ; Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 ;
 ; ABSTRACT
+; Interrupt service routines for serial I/O. Handles RX and TX interrupts
+; which are managed using 32-byte ring buffers. If you changet the size of
+; the ring buffer, make sure you make the appropriate changes here. Also
+; the helper functions to enable and disable the interrupts are located
+; here. The BOOTSTRAP option allows entry into bootstrap mode on receipt
+; of a CTRL-E followed by a backslash (^E\). One side-effect (bug!) of this
+; behaviour is that ^E is swallowed and not placed into the input buffer.
 ;
 #include <avr/io.h>
 #include "oldregs.h"
@@ -52,8 +59,8 @@ sio_in:
 #else
 	rjmp	_bootstrap			; Run the bootstrap code!
 #endif
-;
 #endif
+;
 2:	lds		r24,ihead			; Get head & tail
 	lds		r25,itail
 	inc		r24
@@ -71,7 +78,6 @@ sio_in:
 	inc		r24
 	andi	r24,31
 	sts		ihead,r24			; Save the new head pointer
-;
 	rjmp	siol1				; We're done
 	.endfunc
 ;
@@ -88,9 +94,19 @@ sio_out:
 	push	r26
 	push	r27
 ;
-	ldi		r26,lo8(oring)		; Get the base ring buffer addr
+; Check that there's something in the buffer.
+	lds		r24,otail			; Get the head and tail
+	lds		r25,ohead
+	cp		r24,r25				; Buffer empty?
+	brne	1f
+;
+; Yes - disable the interrupt and go home.
+	rcall	_sio_txintoff
+	rjmp	siol1
+;
+; We have something to send.
+1:	ldi		r26,lo8(oring)		; Get the base ring buffer addr
 	ldi		r27,hi8(oring)
-	lds		r24,otail			; Add the tail pointer
 	add		r26,r24
 	adc		r27,r1				; R1 is always zero!!!
 	ld		r25,X				; Get the character in the ring
@@ -99,12 +115,6 @@ sio_out:
 	inc		r24					; Increment the tail pointer
 	andi	r24,31
 	sts		otail,r24
-	lds		r25,ohead			; Get the head pointer
-	cp		r24,r25				; Buffer empty?
-	brne	siol1				; No, continue
-	lds		r24,UCSR0B	; Disable TX ints
-	andi	r24,0xdf
-	sts		UCSR0B,r24
 ;
 ; Common return routine from interrupts.
 siol1:
@@ -115,6 +125,54 @@ siol1:
 	out		_SFR_IO_ADDR(SREG),r24
 	pop		r24
 	reti						; Return from interrupt
+	.endfunc
+;
+; void _sio_rxinton();
+;
+; Enable transmission interrupts.
+	.global	_sio_rxinton
+	.func	_sio_rxinton
+_sio_rxinton:
+	lds		r24,UCSR0B			; Enable RX ints
+	ori		r24,0x80
+	sts		UCSR0B,r24
+	ret
+	.endfunc
+;
+; void _sio_rxintoff();
+;
+; Disable transmission interrupts.
+	.global	_sio_rxintoff
+	.func	_sio_rxintoff
+_sio_rxintoff:
+	lds		r24,UCSR0B			; Disable RX ints
+	andi	r24,0x7f
+	sts		UCSR0B,r24
+	ret
+	.endfunc
+;
+; void _sio_txinton();
+;
+; Enable transmission interrupts.
+	.global _sio_txinton
+	.func   _sio_txinton
+_sio_txinton:
+	lds		r24,UCSR0B			; Enable TX ints
+	ori		r24,0x20
+	sts		UCSR0B,r24
+	ret
+	.endfunc
+;
+; void _sio_txintoff();
+;
+; Disable transmission interrupts.
+	.global _sio_txintoff
+	.func   _sio_txintoff
+_sio_txintoff:
+	lds		r24,UCSR0B			; Disable TX ints
+	andi	r24,0xdf
+	sts		UCSR0B,r24
+	ret
 	.endfunc
 ;
 ; Look for ^E\ in order to enter bootstrap mode.

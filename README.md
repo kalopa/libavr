@@ -11,11 +11,22 @@ The key components are the RS232 ring buffers and the bootstrap mechanism.
 
 The Bootstrap function provides a very simple (but effective) mechanism
 for being able to update the flash within the chip over the RS232 line.
-The code occupies about 230 words (460 bytes) at high memory, and once
-invoked, will disable interrupts, configure the serial port if necessary,
-and begin communicating with the programming software.
+The code occupies just under 512 bytes, and once invoked, will disable
+interrupts, configure the serial port if necessary, and begin
+communicating with the programming software
+([kprog](https://github.com/kalopa/kprog)).
+On the classic ATmega parts it lives at the top of flash (set the
+BOOTSZ fuses for a 256-word boot section).
+On the tinyAVR 0/1/2-series (e.g. the ATtiny1626) it lives in the BOOT
+section at the bottom of flash: program the BOOTEND fuse to 2 (512
+bytes) with a UPDI programmer, link the application to start at 0x0200
+(`avr.mk` does this when `DEVICE=attiny1626`), and make sure the
+firmware references `_bootstrap` (or link with `-u _bootstrap`) so that
+it is pulled in from the library.
+Once the combined image has been programmed over UPDI, subsequent
+firmware updates can be done over the serial port.
 For more information on the function, look at the source code and
-especially the comments in _bootstrap.s_.
+especially the comments in _bootstrap.S_.
 
 ## Serial Ring Buffers
 

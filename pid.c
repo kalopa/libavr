@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-21, Kalopa Robotics Limited.  All rights reserved.
+ * Copyright (c) 2013-26, Kalopa Robotics Limited.  All rights reserved.
  *
  * This is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by

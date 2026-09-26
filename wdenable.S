@@ -14,23 +14,31 @@
 ; Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 ;
 ; ABSTRACT
-; Wait for the conversion to complete and read the result of an A
-; to D conversion.
 ;
 #include <avr/io.h>
 ;
-; uint_t _ana_read();
+; void _wdenable();
 ;
-; Set interrupts to specified value.
-	.global	_ana_read
-	.func	_ana_read
-_ana_read:
-	sbis	_SFR_IO_ADDR(ADCSR),4				; Are we done?
-	rjmp	_ana_read			; No - busy loop
+; Enable the watchdog timer.
+	.global	_wdenable
+	.func	_wdenable
+_wdenable:
+	push	r24
+	in		r24,_SFR_IO_ADDR(SREG)	; Save INTE status
+	push	r24
 ;
-	lds	r24,ADCL			; Yes - read the result
-	lds	r25,ADCH
+	cli								; No interrupts!
+	wdr								; Clear the watchdog
+	ldi		r24,0x1f				; WDCE, WDE, WDP=2048k
+	out		_SFR_IO_ADDR(WDTCR),r24
+	ldi		r24,0x0f				; WDE, WDP=2048k
+	out		_SFR_IO_ADDR(WDTCR),r24
+	wdr
+;
+	pop		r24
+	out		_SFR_IO_ADDR(SREG),r24
+	pop		r24
 	ret
 	.endfunc
 ;
-; Fin.
+; Fin

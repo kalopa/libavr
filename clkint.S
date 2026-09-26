@@ -1,5 +1,5 @@
 ;
-; Copyright (c) 2007-21, Kalopa Robotics Limited.  All rights reserved.
+; Copyright (c) 2007-26, Kalopa Robotics Limited.  All rights reserved.
 ;
 ; This is free software; you can redistribute it and/or modify it
 ; under the terms of the GNU General Public License as published by
@@ -27,21 +27,30 @@ _clk_int:
 	push	r24					; Save the status register
 	in		r24,_SFR_IO_ADDR(SREG)
 	push	r24
-	push	r25					; Save the working regs
+	push	r25
 ;
-	push	r18
+	push	r18					; Save the temporary regs
 	push	r19
-	push	r26					; Save the temporary regs
-	push	r27					; Save the temporary regs
+	push	r20
+	push	r21
+	push	r26
+	push	r27
+	push	r30
+	push	r31
 #ifdef __AVR_HAVE_JMP_CALL__
 	call	clocktick			; Call the main clock tick
 #else
 	rcall	clocktick			; Call the main clock tick
 #endif
-	pop		r27					; Restore the registers
+	pop		r31					; Restore the registers
+	pop		r30
+	pop		r27
 	pop		r26
+	pop		r21
+	pop		r20
 	pop		r19
 	pop		r18
+;
 	pop		r25					; Restore the status register
 	pop		r24
 	out		_SFR_IO_ADDR(SREG),r24
