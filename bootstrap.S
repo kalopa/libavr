@@ -117,41 +117,41 @@
 #define BSTRAP_BOOTEND	2					/* FUSE.BOOTEND (256 byte units) */
 #endif
 #ifndef BSTRAP_BAUD
-#define BSTRAP_BAUD		9600
+#define BSTRAP_BAUD	9600
 #endif
-#define BSTRAP_APP		(BSTRAP_BOOTEND * 256)	/* Application start address */
-#define BSTRAP_BOOTBLK	0						/* First bootstrap block */
-#define BSTRAP_NBOOT	(BSTRAP_BOOTEND * 2)	/* Bootstrap blocks (128 bytes) */
-#define BSTRAP_NBLKS	(PROGMEM_SIZE / 128)	/* Flash size in blocks */
-#define MEMBUF			RAMSTART				/* 128 byte upload buffer */
-#define SIO_STATUS		USART0_STATUS			/* Serial status register */
-#define SIO_RXBIT		7						/* RXCIF - character available */
-#define SIO_TXBIT		5						/* DREIF - ready to transmit */
-#define SIO_RXDATA		USART0_RXDATAL
-#define SIO_TXDATA		USART0_TXDATAL
-#define CCP_SPM			0x9d					/* CCP key for NVMCTRL.CTRLA */
-#define NVM_ER			0x02					/* Erase page command */
-#define NVM_ERWP		0x03					/* Erase & write page command */
+#define BSTRAP_APP	(BSTRAP_BOOTEND * 256)			/* Application start address */
+#define BSTRAP_BOOTBLK	0					/* First bootstrap block */
+#define BSTRAP_NBOOT	(BSTRAP_BOOTEND * 2)			/* Bootstrap blocks (128 bytes) */
+#define BSTRAP_NBLKS	(PROGMEM_SIZE / 128)			/* Flash size in blocks */
+#define MEMBUF		RAMSTART				/* 128 byte upload buffer */
+#define SIO_STATUS	USART0_STATUS				/* Serial status register */
+#define SIO_RXBIT	7					/* RXCIF - character available */
+#define SIO_TXBIT	5					/* DREIF - ready to transmit */
+#define SIO_RXDATA	USART0_RXDATAL
+#define SIO_TXDATA	USART0_TXDATAL
+#define CCP_SPM		0x9d					/* CCP key for NVMCTRL.CTRLA */
+#define NVM_ER		0x02					/* Erase page command */
+#define NVM_ERWP	0x03					/* Erase & write page command */
 ;
 ; USART BAUD register value = 64 * F_CPU / (16 * baud) = 4 * F_CPU / baud,
 ; where F_CPU is the reset default of the main oscillator divided by six.
 ;
-#define BAUD_16M		((4 * 16000000 / 6 + BSTRAP_BAUD / 2) / BSTRAP_BAUD)
-#define BAUD_20M		((4 * 20000000 / 6 + BSTRAP_BAUD / 2) / BSTRAP_BAUD)
+#define BAUD_16M	((4 * 16000000 / 6 + BSTRAP_BAUD / 2) / BSTRAP_BAUD)
+#define BAUD_20M	((4 * 20000000 / 6 + BSTRAP_BAUD / 2) / BSTRAP_BAUD)
 ;
 #else
 ;
 ; Classic ATmega family. Bootstrap at the top of flash.
 ;
-#define BSTRAP_BOOTBLK	(((FLASHEND + 1) / 128) - 4)	/* First bootstrap block */
-#define BSTRAP_NBOOT	4						/* Bootstrap blocks (128 bytes) */
-#define BSTRAP_NBLKS	((FLASHEND + 1) / 128)	/* Flash size in blocks */
-#define MEMBUF			0x100					/* 128 byte upload buffer */
-#define SIO_STATUS		UCSR0A					/* Serial status register */
-#define SIO_RXBIT		7						/* RXC0 - character available */
-#define SIO_TXBIT		5						/* UDRE0 - ready to transmit */
-#define SIO_RXDATA		UDR0
-#define SIO_TXDATA		UDR0
+#define BSTRAP_BOOTBLK	(((FLASHEND + 1) / 128) - 4)		/* First bootstrap block */
+#define BSTRAP_NBOOT	4					/* Bootstrap blocks (128 bytes) */
+#define BSTRAP_NBLKS	((FLASHEND + 1) / 128)			/* Flash size in blocks */
+#define MEMBUF		0x100					/* 128 byte upload buffer */
+#define SIO_STATUS	UCSR0A					/* Serial status register */
+#define SIO_RXBIT	7					/* RXC0 - character available */
+#define SIO_TXBIT	5					/* UDRE0 - ready to transmit */
+#define SIO_RXDATA	UDR0
+#define SIO_TXDATA	UDR0
 #endif
 ;
 ; void _bootstrap();
@@ -167,10 +167,10 @@
 	.global	_bstrap_reset
 	.func	_bstrap_reset
 _bstrap_reset:
-	ldi		r30,lo8(BSTRAP_APP+1)	; Z = application reset vector (high byte)
-	ldi		r31,hi8(BSTRAP_APP+1)
-	lpm		r24,Z					; Erased flash is 0xff (a jump never is)
-	cpi		r24,0xff
+	ldi	r30,lo8(BSTRAP_APP+1)			; Z = application reset vector (high byte)
+	ldi	r31,hi8(BSTRAP_APP+1)
+	lpm	r24,Z					; Erased flash is 0xff (a jump never is)
+	cpi	r24,0xff
 	breq	_bootstrap				; No application - stay here
 	rjmp	BSTRAP_APP				; Otherwise, off we go...
 	.endfunc
@@ -179,245 +179,245 @@ _bstrap_reset:
 	.global	_bootstrap
 	.func	_bootstrap
 _bootstrap:
-	cli								; No interrupts, please!
-	clr		r1
-	out		_SFR_IO_ADDR(SREG),r1
-	in		r31,_SFR_IO_ADDR(SPH)	; Save the stack pointer (for debug)
-	in		r30,_SFR_IO_ADDR(SPL)
+	cli						; No interrupts, please!
+	clr	r1
+	out	_SFR_IO_ADDR(SREG),r1
+	in	r31,_SFR_IO_ADDR(SPH)			; Save the stack pointer (for debug)
+	in	r30,_SFR_IO_ADDR(SPL)
 #if defined(__AVR_XMEGA__)
-	lds		r24,USART0_CTRLB		; Get the serial port control register
+	lds	r24,USART0_CTRLB			; Get the serial port control register
 	andi	r24,0xc0				; RXEN|TXEN - is it initialized?
 	brne	1f
 ;
 ; Serial port not enabled - set it up with the stack. Configure the UART for
 ; serial communications at 9600 baud (polled), using the reset clock.
-	ldi		r16,lo8(RAMEND)			; Set up the stack pointer
-	ldi		r17,hi8(RAMEND)
-	out		_SFR_IO_ADDR(SPH),r17
-	out		_SFR_IO_ADDR(SPL),r16
+	ldi	r16,lo8(RAMEND)			; Set up the stack pointer
+	ldi	r17,hi8(RAMEND)
+	out	_SFR_IO_ADDR(SPH),r17
+	out	_SFR_IO_ADDR(SPL),r16
 ;
 #ifdef BSTRAP_USART_ALT1
-	ldi		r24,0x01				; USART0 on PA1 (TXD) & PA2 (RXD)
-	sts		PORTMUX_USARTROUTEA,r24
-	ldi		r24,0x02				; PA1 is an output
-	sts		PORTA_DIRSET,r24
+	ldi	r24,0x01				; USART0 on PA1 (TXD) & PA2 (RXD)
+	sts	PORTMUX_USARTROUTEA,r24
+	ldi	r24,0x02				; PA1 is an output
+	sts	PORTA_DIRSET,r24
 #else
-	ldi		r24,0x04				; PB2 (TXD) is an output
-	sts		PORTB_DIRSET,r24
+	ldi	r24,0x04				; PB2 (TXD) is an output
+	sts	PORTB_DIRSET,r24
 #endif
-	ldi		r24,lo8(BAUD_16M)		; Assume a 16MHz oscillator...
-	ldi		r25,hi8(BAUD_16M)
-	lds		r16,FUSE_OSCCFG			; ...unless the fuse says 20MHz
+	ldi	r24,lo8(BAUD_16M)			; Assume a 16MHz oscillator...
+	ldi	r25,hi8(BAUD_16M)
+	lds	r16,FUSE_OSCCFG				; ...unless the fuse says 20MHz
 	sbrs	r16,1					; FREQSEL: 1=16MHz, 2=20MHz
 	rjmp	2f
-	ldi		r24,lo8(BAUD_20M)
-	ldi		r25,hi8(BAUD_20M)
-2:	sts		USART0_BAUDL,r24
-	sts		USART0_BAUDH,r25
-	ldi		r24,0x03				; Async, no parity, 1 stop, 8 bits
-	sts		USART0_CTRLC,r24
+	ldi	r24,lo8(BAUD_20M)
+	ldi	r25,hi8(BAUD_20M)
+2:	sts	USART0_BAUDL,r24
+	sts	USART0_BAUDH,r25
+	ldi	r24,0x03				; Async, no parity, 1 stop, 8 bits
+	sts	USART0_CTRLC,r24
 ;
-1:	ldi		r24,0xc0				; RXEN|TXEN
-	sts		USART0_CTRLB,r24
+1:	ldi	r24,0xc0				; RXEN|TXEN
+	sts	USART0_CTRLB,r24
 #else
-	lds		r24,UCSR0B				; Get the serial port CSR
+	lds	r24,UCSR0B				; Get the serial port CSR
 	andi	r24,0x18				; Is it initialized?
 	brne	1f
 ;
 ; Serial port not enabled - set it up with the stack. Configure the UART for
 ; serial communications at 9600 baud (polled).
-	ldi		r16,lo8(RAMEND)			; Set up the stack pointer
-	ldi		r17,hi8(RAMEND)
-	out		_SFR_IO_ADDR(SPH),r17
-	out		_SFR_IO_ADDR(SPL),r16
+	ldi	r16,lo8(RAMEND)				; Set up the stack pointer
+	ldi	r17,hi8(RAMEND)
+	out	_SFR_IO_ADDR(SPH),r17
+	out	_SFR_IO_ADDR(SPL),r16
 ;
-	ldi		r24,103					; Baud rate to 9600 @ 16MHz
-	sts		UBRR0H,r1
-	sts		UBRR0L,r24
-	ldi		r24,0x06				; UCSZ01|UCSZ00
-	sts		UCSR0C,r24
+	ldi	r24,103					; Baud rate to 9600 @ 16MHz
+	sts	UBRR0H,r1
+	sts	UBRR0L,r24
+	ldi	r24,0x06				; UCSZ01|UCSZ00
+	sts	UCSR0C,r24
 ;
-1:	ldi		r24,0x18				; RXEN0|TXEN0
-	sts		UCSR0B,r24
+1:	ldi	r24,0x18				; RXEN0|TXEN0
+	sts	UCSR0B,r24
 #endif
 	rcall	.z_out					; Show the stack pointer
 ;
-	ldi		r31,hi8(_bstrap_msg)	; Point to start message
-	ldi		r30,lo8(_bstrap_msg)
-2:	lpm		r24,Z+					; Get each character
-	tst		r24						; End of string?
-	breq	3f						; Yeah - now the layout
-	rcall	.ser_out					; Output character
-	rjmp	2b						; Get next
+	ldi	r31,hi8(_bstrap_msg)	; Point to start message
+	ldi	r30,lo8(_bstrap_msg)
+2:	lpm	r24,Z+					; Get each character
+	tst	r24					; End of string?
+	breq	3f					; Yeah - now the layout
+	rcall	.ser_out				; Output character
+	rjmp	2b					; Get next
 ;
 ; Following the banner string are three bytes describing the flash layout.
-3:	ldi		r16,3
-4:	ldi		r24,' '					; Space-separated...
+3:	ldi	r16,3
+4:	ldi	r24,' '					; Space-separated...
 	rcall	.ser_out
-	lpm		r24,Z+					; Each is a hex byte
+	lpm	r24,Z+					; Each is a hex byte
 	rcall	.hex_out
-	dec		r16
+	dec	r16
 	brne	4b
 	rjmp	.mloop
 ;
 .good:
-	ldi		r24,'+'					; Confirm success
+	ldi	r24,'+'					; Confirm success
 	rcall	.ser_out
 ;
 .mloop:
-	ldi		r24,'\n'				; Output a CR/LF
+	ldi	r24,'\n'				; Output a CR/LF
 	rcall	.ser_out
-	ldi		r24,'@'					; Output the prompt
+	ldi	r24,'@'					; Output the prompt
 	rcall	.ser_out
 	rcall	.ser_in					; Read a command character
-	cpi		r24,'\r'				; Carriage-return?
+	cpi	r24,'\r'				; Carriage-return?
 	breq	.mloop					; No, try the next option
 ;
 ; Reset the board?
-	cpi		r24,'R'					; Reset command?
+	cpi	r24,'R'					; Reset command?
 	brne	.chkd					; No, try the next option
 #if defined(__AVR_HAVE_JMP_CALL__) && !defined(__AVR_XMEGA__)
-	jmp		0						; Easy - just go to the zero addr
+	jmp	0					; Easy - just go to the zero addr
 #else
-	rjmp	0						; Easy - just go to the zero addr
+	rjmp	0					; Easy - just go to the zero addr
 #endif
 ;
 ; Dump?
 .chkd:
-	cpi		r24,'D'
+	cpi	r24,'D'
 	brne	.chkm					; No, try the next option
 	rcall	.get_hex8				; Get the block address
 	brcs	.error
-	mov		r31,r24					; Set up the Z register
-	clr		r30
+	mov	r31,r24					; Set up the Z register
+	clr	r30
 ;
-	ldi		r16,16					; Sixteen lines of output
-1:	ldi		r17,16					; Sixteen bytes in each
-	ldi		r24,'P'					; Start with a 'P' (Flash output)
+	ldi	r16,16					; Sixteen lines of output
+1:	ldi	r17,16					; Sixteen bytes in each
+	ldi	r24,'P'					; Start with a 'P' (Flash output)
 	rcall	.ser_out
 	rcall	.z_out					; Output the address
-2:	ldi		r24,' '					; Lead with a space
+2:	ldi	r24,' '					; Lead with a space
 	rcall	.ser_out
-	lpm		r24,Z+					; Fetch the program byte
-	rcall	.hex_out					; Output it
-	dec		r17						; Inner loop decrement
+	lpm	r24,Z+					; Fetch the program byte
+	rcall	.hex_out				; Output it
+	dec	r17					; Inner loop decrement
 	brne	2b
-	ldi		r24,'\n'				; End of line
+	ldi	r24,'\n'				; End of line
 	rcall	.ser_out
-	dec		r16						; Outer loop decrement
+	dec	r16					; Outer loop decrement
 	brne	1b
 	rjmp	.good					; And we're done!
 ;
 ; Dump the memory buffer? (Not on the tinyAVR - there isn't room.)
 .chkm:
 #if !defined(__AVR_XMEGA__)
-	cpi		r24,'M'					; Dump memory buffer?
+	cpi	r24,'M'					; Dump memory buffer?
 	brne	.chkn					; No, try the next option
 ;
-	ldi		r31,hi8(MEMBUF)			; Set the memory address
-	ldi		r30,lo8(MEMBUF)
-	ldi		r16,8					; Eight lines of output
-1:	ldi		r17,16					; Sixteen bytes in each
-	ldi		r24,'M'					; Start with an 'M' (memory output)
+	ldi	r31,hi8(MEMBUF)				; Set the memory address
+	ldi	r30,lo8(MEMBUF)
+	ldi	r16,8					; Eight lines of output
+1:	ldi	r17,16					; Sixteen bytes in each
+	ldi	r24,'M'					; Start with an 'M' (memory output)
 	rcall	.ser_out
-	mov		r24,r30
-	rcall	.hex_out					; Output the address
-2:	ldi		r24,' '					; Lead with a space
+	mov	r24,r30
+	rcall	.hex_out				; Output the address
+2:	ldi	r24,' '					; Lead with a space
 	rcall	.ser_out
-	ld		r24,Z+					; Read the memory address
-	rcall	.hex_out					; Output it
-	dec		r17						; Inner loop decrement
+	ld	r24,Z+					; Read the memory address
+	rcall	.hex_out				; Output it
+	dec	r17					; Inner loop decrement
 	brne	2b
-	ldi		r24,'\n'				; End of line
+	ldi	r24,'\n'				; End of line
 	rcall	.ser_out
-	dec		r16						; Outer loop decrement
+	dec	r16					; Outer loop decrement
 	brne	1b
 	rjmp	.good					; And we're done!
 #endif
 ;
 ; Report an error and try again.
 .error:
-	ldi		r24,'-'					; Output brief error message
+	ldi	r24,'-'					; Output brief error message
 	rcall	.ser_out
 	rjmp	.mloop					; Try again...
 ;
 ; Program?
 .chkn:
-	cpi		r24,'0'					; >= '0'?
+	cpi	r24,'0'					; >= '0'?
 	brlt	.chke					; No, try the next option
-	cpi		r24,'8'					; <= '7'?
+	cpi	r24,'8'					; <= '7'?
 	brge	.chke					; No, try the next option
 	subi	r24,'0'					; Ok, convert from ASCII
-	lsl		r24						; Convert to a memory address
-	lsl		r24
-	lsl		r24
-	lsl		r24
-	mov		r30,r24
-	ldi		r31,hi8(MEMBUF)
+	lsl	r24					; Convert to a memory address
+	lsl	r24
+	lsl	r24
+	lsl	r24
+	mov	r30,r24
+	ldi	r31,hi8(MEMBUF)
 ;
 ; Program code.
-	ldi		r16,16					; Retrieve sixteen bytes
+	ldi	r16,16					; Retrieve sixteen bytes
 1:	rcall	.get_hex8				; Get each data value
-	st		Z+,r24					; Store it in memory
+	st	Z+,r24					; Store it in memory
 	rcall	.ser_in					; Delimit with dots
-	cpi		r24,'.'
+	cpi	r24,'.'
 	brne	.error					; No? Data error - give up
-	dec		r16						; Decrement loop
-	brne	1b						; Keep going for all 16
+	dec	r16					; Decrement loop
+	brne	1b					; Keep going for all 16
 	rjmp	.good					; Now we're done
 ;
 #if defined(__AVR_XMEGA__)
 ;
 ; Erase a block? Each 128 byte block is made up of one or more flash pages.
 .chke:
-	cpi		r24,'E'					; 'E' command?
+	cpi		r24,'E'				; 'E' command?
 	brne	.chkp					; No, try the next option
 	rcall	.blk_conv				; Get block address (in Z)
 	brcs	.error
-	ori		r31,hi8(MAPPED_PROGMEM_START)	; Flash is mapped at 0x8000
-	ldi		r16,128/PROGMEM_PAGE_SIZE	; Pages per block
+	ori	r31,hi8(MAPPED_PROGMEM_START)		; Flash is mapped at 0x8000
+	ldi	r16,128/PROGMEM_PAGE_SIZE		; Pages per block
 1:	rcall	.nvm_wait				; Wait for the NVM controller
-	st		Z,r1					; Dummy write selects the page
-	ldi		r24,NVM_ER				; Erase the page
+	st	Z,r1					; Dummy write selects the page
+	ldi	r24,NVM_ER				; Erase the page
 	rcall	.nvm_cmd
-	subi	r30,lo8(-PROGMEM_PAGE_SIZE)	; Next page
+	subi	r30,lo8(-PROGMEM_PAGE_SIZE)		; Next page
 	sbci	r31,hi8(-PROGMEM_PAGE_SIZE)
-	dec		r16
+	dec	r16
 	brne	1b
 	rjmp	.good
 ;
 ; Write a block?
 .chkp:
-	cpi		r24,'P'					; 'P' command?
+	cpi	r24,'P'					; 'P' command?
 	brne	.error					; No, then we have an error
 	rcall	.blk_conv				; Get block address (in Z)
 	brcs	.error
-	ori		r31,hi8(MAPPED_PROGMEM_START)	; Flash is mapped at 0x8000
-	ldi		r28,lo8(MEMBUF)			; Y = memory buffer
-	ldi		r29,hi8(MEMBUF)
-	ldi		r16,128/PROGMEM_PAGE_SIZE	; Pages per block
+	ori	r31,hi8(MAPPED_PROGMEM_START)		; Flash is mapped at 0x8000
+	ldi	r28,lo8(MEMBUF)				; Y = memory buffer
+	ldi	r29,hi8(MEMBUF)
+	ldi	r16,128/PROGMEM_PAGE_SIZE		; Pages per block
 1:	rcall	.nvm_wait				; Wait for the NVM controller
-	ldi		r17,PROGMEM_PAGE_SIZE	; Fill the page buffer from memory
-2:	ld		r0,Y+
-	st		Z+,r0
-	dec		r17
+	ldi	r17,PROGMEM_PAGE_SIZE			; Fill the page buffer from memory
+2:	ld	r0,Y+
+	st	Z+,r0
+	dec	r17
 	brne	2b
-	ldi		r24,NVM_ERWP			; Erase & write the page
+	ldi	r24,NVM_ERWP				; Erase & write the page
 	rcall	.nvm_cmd
-	dec		r16
+	dec	r16
 	brne	1b
 	rjmp	.good
 ;
 ; Issue an NVM controller command (in r24) and wait for it to complete.
 .nvm_cmd:
-	ldi		r25,CCP_SPM				; Unlock NVMCTRL.CTRLA
-	out		_SFR_IO_ADDR(CCP),r25
-	sts		NVMCTRL_CTRLA,r24		; Go!
+	ldi	r25,CCP_SPM				; Unlock NVMCTRL.CTRLA
+	out	_SFR_IO_ADDR(CCP),r25
+	sts	NVMCTRL_CTRLA,r24			; Go!
 ;
 ; Wait for the NVM controller to become idle.
 .nvm_wait:
-	lds		r25,NVMCTRL_STATUS
-	wdr								; Kick the watchdog timer
+	lds	r25,NVMCTRL_STATUS
+	wdr						; Kick the watchdog timer
 	andi	r25,0x03				; FBUSY|EEBUSY
 	brne	.nvm_wait
 	ret
@@ -426,54 +426,54 @@ _bootstrap:
 ;
 ; Erase a block?
 .chke:
-	cpi		r24,'E'					; 'E' command?
+	cpi	r24,'E'					; 'E' command?
 	brne	.chkp					; No, try the next option
 	rcall	.blk_conv				; Get block address (in Z)
 	brcs	.error
 ;
 ; Erase a page in flash
-	ldi		r24,(1<<PGERS)|(1<<SPMEN)	; Do page erase
+	ldi	r24,(1<<PGERS)|(1<<SPMEN)		; Do page erase
 	rcall	.do_spm
-	ldi		r24,(1<<RWWSRE)|(1<<SPMEN)	; Re-enable RWW section
+	ldi	r24,(1<<RWWSRE)|(1<<SPMEN)		; Re-enable RWW section
 	rcall	.do_spm
 	rjmp	.good
 ;
 ; Write a block?
 .chkp:
-	cpi		r24,'P'					; 'P' command?
+	cpi	r24,'P'					; 'P' command?
 	brne	.error					; No, then we have an error
 	rcall	.blk_conv				; Get block address (in Z)
 	brcs	.error
 ;
 ; Write a page from memory
-	ldi		r16,64					; 64 words per page
-	ldi		r28,lo8(MEMBUF)			; Y = memory buffer
-	ldi		r29,hi8(MEMBUF)
-	push	r30						; Save the memory address for later
+	ldi	r16,64					; 64 words per page
+	ldi	r28,lo8(MEMBUF)				; Y = memory buffer
+	ldi	r29,hi8(MEMBUF)
+	push	r30					; Save the memory address for later
 	push	r31
-1:	ld		r0,Y+					; Load a word from memory
-	ld		r1,Y+
-	ldi		r24,(1<<SPMEN)			; Write it using the SPM instruction
+1:	ld	r0,Y+					; Load a word from memory
+	ld	r1,Y+
+	ldi	r24,(1<<SPMEN)				; Write it using the SPM instruction
 	rcall	.do_spm
 	adiw	r30,2					; Next word address
-	dec		r16						; Decrement count
+	dec	r16					; Decrement count
 	wdr
-	brne	1b						; Keep going until page done
+	brne	1b					; Keep going until page done
 ;
-	pop		r31						; Restore memort address
-	pop		r30
-	ldi		r24,(1<<PGWRT)|(1<<SPMEN)	; Do page write
+	pop	r31					; Restore memort address
+	pop	r30
+	ldi	r24,(1<<PGWRT)|(1<<SPMEN)		; Do page write
 	rcall	.do_spm
-	ldi		r24,(1<<RWWSRE)|(1<<SPMEN)	; Re-enable RWW section
+	ldi	r24,(1<<RWWSRE)|(1<<SPMEN)		; Re-enable RWW section
 	rcall	.do_spm
 	rjmp	.good
 ;
 ; Do an SPM operation (SPMCSR value in r24)
 .do_spm:
-	in		r25,_SFR_IO_ADDR(SPMCSR)	; Read the SPM CSR
+	in	r25,_SFR_IO_ADDR(SPMCSR)		; Read the SPM CSR
 	sbrc	r25,SPMEN				; Check bit0 (SPMEN=0)
 	rjmp	.do_spm					; Retry...
-	out		_SFR_IO_ADDR(SPMCSR),r24	; Write new CSR value
+	out	_SFR_IO_ADDR(SPMCSR),r24		; Write new CSR value
 	spm
 	ret
 #endif
@@ -484,78 +484,78 @@ _bootstrap:
 .blk_conv:
 	rcall	.get_hex8				; Get the block number
 	brcs	2f						; Bad hex? We're done.
-	mov		r25,r24					; Disallow bootstrap erase/program
+	mov	r25,r24					; Disallow bootstrap erase/program
 	subi	r25,BSTRAP_BOOTBLK
-	cpi		r25,BSTRAP_NBOOT		; In the bootstrap area?
-	brlo	1f						; Yes - error
+	cpi	r25,BSTRAP_NBOOT			; In the bootstrap area?
+	brlo	1f					; Yes - error
 #if BSTRAP_NBLKS < 256
-	cpi		r24,BSTRAP_NBLKS		; Beyond the end of flash?
-	brsh	1f						; Yes - error
+	cpi	r24,BSTRAP_NBLKS			; Beyond the end of flash?
+	brsh	1f					; Yes - error
 #endif
-	mov		r30,r24					; Move r24 to Z
-	clr		r31
-	ldi		r24,7					; Block size << 7
-3:	lsl		r30						; Shift LSB (into C)
-	rol		r31						; Shift MSB (from C)
-	dec		r24						; Continue...
+	mov	r30,r24					; Move r24 to Z
+	clr	r31
+	ldi	r24,7					; Block size << 7
+3:	lsl	r30					; Shift LSB (into C)
+	rol	r31					; Shift MSB (from C)
+	dec	r24					; Continue...
 	brne	3b
-	clc								; All good
+	clc						; All good
 	ret
 ;
-1:	sec								; Failed - set carry and return
+1:	sec						; Failed - set carry and return
 2:	ret
 ;
 ; Read a 8-bit hex value.
 .get_hex8:
 	rcall	.get_hex4				; Get a nybble (bits7:4)
-	brcs	1f						; Error? abort now.
-	swap	r24						; Move to upper bits
-	mov		r25,r24					; Save in r25
+	brcs	1f					; Error? abort now.
+	swap	r24					; Move to upper bits
+	mov	r25,r24					; Save in r25
 	rcall	.get_hex4				; Get other nybble (bits3:0)
-	brcs	1f						; Error? abort now
-	or		r24,r25					; Add in the upper bits
+	brcs	1f					; Error? abort now
+	or	r24,r25					; Add in the upper bits
 1:	ret
 ;
 ; Read a hex nybble.
 .get_hex4:
-	clc								; Clear the C bit (just in case)
+	clc						; Clear the C bit (just in case)
 	rcall	.ser_in					; Get one character
-	cpi		r24,'0'					; Less than '0'?
-	brlt	2f						; Yeah - fail
-	cpi		r24,':'					; Greater than '9'?
-	brge	1f						; Yeah - maybe it's [A-F]
+	cpi	r24,'0'					; Less than '0'?
+	brlt	2f					; Yeah - fail
+	cpi	r24,':'					; Greater than '9'?
+	brge	1f					; Yeah - maybe it's [A-F]
 	subi	r24,'0'					; Subtract ASCII
-	clc								; Clear carry, and we're done
+	clc						; Clear carry, and we're done
 	ret
-1:	cpi		r24,'A'					; Less than 'A'?
-	brlt	2f						; Yeah - fail
-	cpi		r24,'G'					; Greater than 'F'?
-	brge	2f						; Again, fail
+1:	cpi	r24,'A'					; Less than 'A'?
+	brlt	2f					; Yeah - fail
+	cpi	r24,'G'					; Greater than 'F'?
+	brge	2f					; Again, fail
 	subi	r24,55					; Remove ASCII
-	clc								; Clear carry, and we're done
+	clc						; Clear carry, and we're done
 	ret
 ;
-2:	sec								; Failed - set carry and return
+2:	sec						; Failed - set carry and return
 	ret
 ;
 ; Input a character from the serial port to r24.
 .ser_in:
-	lds		r24,SIO_STATUS			; Get the UART status
-	wdr							; Kick the watchdog timer
-	sbrs	r24,SIO_RXBIT			; Character available?
+	lds	r24,SIO_STATUS				; Get the UART status
+	wdr						; Kick the watchdog timer
+	sbrs	r24,SIO_RXBIT				; Character available?
 	rjmp	.ser_in					; No. Try again.
-	lds		r24,SIO_RXDATA			; Receive the character
-	cpi		r24,'a'					; Convert to uppercase
+	lds	r24,SIO_RXDATA				; Receive the character
+	cpi	r24,'a'					; Convert to uppercase
 	brlt	1f
-	cpi		r24,'z'+1
+	cpi	r24,'z'+1
 	brge	1f
 	subi	r24,32
-1:	cpi		r24,5					; ^E? Ignore...
-	breq		.ser_in
-	cpi		r24,'\\'				; Backslash? Reset.
-	brne		2f
+1:	cpi	r24,5					; ^E? Ignore...
+	breq	.ser_in
+	cpi	r24,'\\'				; Backslash? Reset.
+	brne	2f
 #if defined(__AVR_HAVE_JMP_CALL__) && !defined(__AVR_XMEGA__)
-	jmp		_bootstrap
+	jmp	_bootstrap
 #else
 	rjmp	_bootstrap
 #endif
@@ -563,36 +563,36 @@ _bootstrap:
 ;
 ; Output the contents of the 'Z' register
 .z_out:
-	mov		r24,r31					; Get the high byte
-	rcall	.hex_out					; Output it
-	mov		r24,r30					; Get the low byte
+	mov	r24,r31					; Get the high byte
+	rcall	.hex_out				; Output it
+	mov	r24,r30					; Get the low byte
 ;
 ; Output an 8-bit HEX value from r24.
 .hex_out:
-	push	r24						; Save value for now
-	swap	r24						; Get high 4 bits
-	rcall	1f						; Call our local function
-	pop		r24						; Now restore original value
+	push	r24					; Save value for now
+	swap	r24					; Get high 4 bits
+	rcall	1f					; Call our local function
+	pop		r24				; Now restore original value
 ;
 1:	andi	r24,0x0f				; Only want lower 4 bits
 	subi	r24,-48					; Add '0'
-	cpi		r24,':'					; If it's less than 10...
-	brlt	.ser_out					; ... output it
+	cpi	r24,':'					; If it's less than 10...
+	brlt	.ser_out				; ... output it
 	subi	r24,-7					; Adjust for A-F
 ;
 ; Output the character in r24 to the serial port
 .ser_out:
-	cpi		r24,'\n'				; Is this a newline?
+	cpi	r24,'\n'				; Is this a newline?
 	brne	1f						; No - handle normally
-	ldi		r24,'\r'				; Yes - first output a CR
+	ldi	r24,'\r'				; Yes - first output a CR
 	rcall	1f
-	ldi		r24,'\n'				; Now output the LF
+	ldi	r24,'\n'				; Now output the LF
 ;
-1:	lds		r25,SIO_STATUS			; Get the UART status
-	wdr							; Kick the watchdog timer
-	sbrs	r25,SIO_TXBIT			; Ready to transmit?
-	rjmp	1b						; No. Try again.
-	sts		SIO_TXDATA,r24			; Send the character
+1:	lds	r25,SIO_STATUS				; Get the UART status
+	wdr						; Kick the watchdog timer
+	sbrs	r25,SIO_TXBIT				; Ready to transmit?
+	rjmp	1b					; No. Try again.
+	sts	SIO_TXDATA,r24				; Send the character
 	ret
 ;
 ; Sign-on banner, followed by the flash layout: size in KB, first block
